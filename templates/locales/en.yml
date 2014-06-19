@@ -1,0 +1,15 @@
+en:
+  bosh:
+    ui:
+      communicator:
+        sudo:            "sudo %{cmd}"
+        multi_line_sudo: "sudo\n\n%{cmd}\n"
+        upload:          "Uploading %{src_path} -> %{dst_path}"
+
+      asset_uploader:
+        upload: "Uploading %{dst_path}"
+
+      provisioner_tracker:
+        event:         "%{state} %{stage} > %{task}"
+        invalid_event: "%{content}"
+        debug:         "%{content}"

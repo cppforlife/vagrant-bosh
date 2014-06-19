@@ -1,0 +1,6 @@
+[submodule "bosh"]
+	path = bosh
+	url = https://github.com/cloudfoundry/bosh.git
+[submodule "go/src/github.com/fraenkel/candiedyaml"]
+	path = go/src/github.com/fraenkel/candiedyaml
+	url = https://github.com/fraenkel/candiedyaml.git

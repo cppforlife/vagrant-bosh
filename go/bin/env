@@ -1,0 +1,13 @@
+#!/bin/bash 
+
+set -e
+
+base=$( cd "$( dirname "$( dirname "$0" )")" && pwd )
+
+go_agent_base=$( cd "$( dirname "$base" )" && cd bosh/go_agent && pwd )
+
+export GOPATH=$base:$go_agent_base
+export GOBIN=$base/gobin
+export PATH=$PATH:$base/gobin
+
+exec $@

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+BINDIR=$(dirname $0)
+BASEDIR=$(dirname $BINDIR)
+
+$BINDIR/go build -o $BASEDIR/out/provisioner boshprovisioner/main
+
+cp $BASEDIR/out/provisioner $BASEDIR/../lib/vagrant-bosh/assets/provisioner

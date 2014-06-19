@@ -5,14 +5,17 @@ BOSH provisioner allows to provision guest VM by specifying regular BOSH deploym
 
 ### Usage
 
-1. Add new VM provision section to your `Vagrantfile`. For example:
+1. `vagrant plugin install vagrant-bosh`
+
+2. Add new VM provision section to your `Vagrantfile`. For example:
 
 ```
 Vagrant.configure("2") do |config|
   config.vm.box = "precise64"
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
-  config.vm.network "forwarded_port", guest: 25555, host: 25555 # for BOSH Director API
+  # Example port forward for example-bosh-manifest.yml
+  config.vm.network "forwarded_port", guest: 25555, host: 25555 # BOSH Director API
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 4096
@@ -26,10 +29,10 @@ Vagrant.configure("2") do |config|
 end
 ```
 
-2. Create a deployment manifest and specify it via `c.manifest` attribute.
+3. Create a deployment manifest and specify it via `c.manifest` attribute.
    See `dev/example-bosh-manifest.yml` for an example deployment manifest used to deploy BOSH Director.
 
-3. Run `vagrant provision` to provision guest VM
+4. Run `vagrant provision` to provision guest VM
    (DEBUG=1 environment variable will trigger live verbose output).
 
 
@@ -62,11 +65,7 @@ end
 ```
 git submodule update --recursive --init
 
-# Provisioner uses BOSH Agent (Go) libraries (e.g. Blobstore, CmdRunner)
-export GOPATH=$PWD/go:$PWD/bosh/go_agent
-
-go/bin/test
-go/bin/build-linux-amd64
+go/bin/test # or go/bin/build-linux-amd64
 
 # Spin up development Vagrant box with lib/ acting as BOSH provisioner
 ( cd dev/ && vagrant up )

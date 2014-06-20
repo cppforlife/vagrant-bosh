@@ -1,9 +1,11 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
 
+require "vagrant-bosh/version"
+
 Gem::Specification.new do |s|
   s.name    = "vagrant-bosh"
-  s.version = "0.0.1"
+  s.version = VagrantPlugins::VagrantBosh::VERSION
 
   s.homepage    = "https://github.com/cppforlife/vagrant-bosh"
   s.summary     = %q{Vagrant BOSH provisioner plugin.}

@@ -16,7 +16,9 @@ import (
 var _ = Describe("Waiter", func() {
 	var (
 		sleptTimes  []time.Duration
+		sleepFunc   func(d time.Duration)
 		agentClient *fakebpagclient.FakeClient
+		logger      boshlog.Logger
 		waiter      Waiter
 	)
 
@@ -27,10 +29,10 @@ var _ = Describe("Waiter", func() {
 
 	BeforeEach(func() {
 		sleptTimes = []time.Duration{}
-		sleepFunc := func(d time.Duration) { sleptTimes = append(sleptTimes, d) }
+		sleepFunc = func(d time.Duration) { sleptTimes = append(sleptTimes, d) }
 
 		agentClient = &fakebpagclient.FakeClient{}
-		logger := boshlog.NewLogger(boshlog.LevelNone)
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 		waiter = NewWaiter(5000, 14000, sleepFunc, agentClient, logger)
 	})
 
@@ -97,6 +99,48 @@ var _ = Describe("Waiter", func() {
 				Expect(err.Error()).To(ContainSubstring("fake-get-state-err"))
 
 				Expect(sleptTimes).To(Equal([]time.Duration{firstTimeGap}))
+			})
+		})
+
+		Context("when watch time is starts with a 0", func() {
+			BeforeEach(func() {
+				waiter = NewWaiter(0, 14000, sleepFunc, agentClient, logger)
+			})
+
+			BeforeEach(func() {
+				agentClient.GetStateStates = []boshaction.GetStateV1ApplySpec{
+					boshaction.GetStateV1ApplySpec{JobState: "not-running"},
+					boshaction.GetStateV1ApplySpec{JobState: "running"},
+				}
+			})
+
+			It("immediately checks if instance is running", func() {
+				err := waiter.Wait()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(sleptTimes).To(Equal([]time.Duration{
+					0 * time.Millisecond,
+					subsequentTimeGap,
+				}))
+			})
+		})
+
+		Context("when watch time ends with a 0", func() {
+			BeforeEach(func() {
+				waiter = NewWaiter(0, 0, sleepFunc, agentClient, logger)
+			})
+
+			BeforeEach(func() {
+				agentClient.GetStateStates = []boshaction.GetStateV1ApplySpec{
+					boshaction.GetStateV1ApplySpec{JobState: "running"},
+				}
+			})
+
+			It("immediately checks if instance is running", func() {
+				err := waiter.Wait()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(sleptTimes).To(Equal([]time.Duration{0 * time.Millisecond}))
 			})
 		})
 	})

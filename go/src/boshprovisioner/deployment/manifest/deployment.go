@@ -6,6 +6,10 @@ import (
 	bosherr "bosh/errors"
 )
 
+var (
+	DefaultWatchTime = WatchTime{0, 60000}
+)
+
 func (d Deployment) InstanceWatchTime(job Job, i int) WatchTime {
 	var canaries int
 

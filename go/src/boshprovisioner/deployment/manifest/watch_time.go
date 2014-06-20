@@ -9,10 +9,6 @@ import (
 
 type WatchTime [2]int
 
-var (
-	DefaultWatchTime = WatchTime{0, 0}
-)
-
 func NewWatchTimeFromString(str string) (WatchTime, error) {
 	var watchTime WatchTime
 

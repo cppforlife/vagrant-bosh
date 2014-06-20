@@ -4,7 +4,7 @@ package manifest
 import (
 	bosherr "bosh/errors"
 	boshsys "bosh/system"
-	"github.com/fraenkel/candiedyaml"
+	"github.com/cloudfoundry-incubator/candiedyaml"
 )
 
 type Manifest struct {

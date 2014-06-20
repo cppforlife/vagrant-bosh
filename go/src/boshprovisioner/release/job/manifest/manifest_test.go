@@ -38,5 +38,22 @@ properties:
 				}))
 			}
 		})
+
+		It("returns manifest with property definiton default that is an empty string", func() {
+			manifestBytes := []byte(`
+properties:
+  key:
+    default: ""
+`)
+
+			manifest, err := NewManifestFromBytes(manifestBytes)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(manifest.Job.PropertyMappings).To(HaveLen(1))
+
+			for _, propDef := range manifest.Job.PropertyMappings {
+				Expect(propDef.Default).To(Equal(""))
+			}
+		})
 	})
 })

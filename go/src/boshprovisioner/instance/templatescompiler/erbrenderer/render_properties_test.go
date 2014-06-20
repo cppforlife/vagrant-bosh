@@ -88,6 +88,57 @@ var _ = Describe("RenderProperties", func() {
 			})
 		})
 
+		Context("when job specifies an empty string default for a nested property", func() {
+			BeforeEach(func() {
+				job = bpreljob.Job{
+					Properties: []bpreljob.Property{
+						bpreljob.Property{
+							Name:    "prop.nest-prop",
+							Default: "",
+						},
+					},
+				}
+			})
+
+			Context("when instance specifies nested property", func() {
+				BeforeEach(func() {
+					instance = bpdep.Instance{
+						Properties: map[string]interface{}{
+							"prop": map[string]interface{}{
+								"nest-prop": "instance-val",
+							},
+						},
+					}
+				})
+
+				It("returns map with property value from instance", func() {
+					Expect(props.AsMap()).To(Equal(map[string]interface{}{
+						"prop": map[string]interface{}{
+							"nest-prop": "instance-val",
+						},
+					}))
+				})
+			})
+
+			Context("when instance does not specify nested property", func() {
+				BeforeEach(func() {
+					instance = bpdep.Instance{
+						Properties: map[string]interface{}{
+							"prop": map[string]interface{}{},
+						},
+					}
+				})
+
+				It("returns map with default property from job", func() {
+					Expect(props.AsMap()).To(Equal(map[string]interface{}{
+						"prop": map[string]interface{}{
+							"nest-prop": "",
+						},
+					}))
+				})
+			})
+		})
+
 		Context("when job does not specify a default (nil) for a nested property", func() {
 			BeforeEach(func() {
 				job = bpreljob.Job{

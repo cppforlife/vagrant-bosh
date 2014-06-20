@@ -19,7 +19,7 @@ func (d Deployment) InstanceWatchTime(job Job, i int) WatchTime {
 		return d.CanaryWatchTime(job)
 	}
 
-	return d.CanaryWatchTime(job)
+	return d.UpdateWatchTime(job)
 }
 
 func (d Deployment) CanaryWatchTime(job Job) WatchTime {

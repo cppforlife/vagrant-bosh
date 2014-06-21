@@ -15,12 +15,11 @@ const updaterLogTag = "Updater"
 type Updater struct {
 	instanceDesc string
 
-	preparer Preparer
-	drainer  Drainer
-	stopper  Stopper
-	applier  bpapplier.Applier
-	starter  Starter
-	waiter   Waiter
+	drainer Drainer
+	stopper Stopper
+	applier bpapplier.Applier
+	starter Starter
+	waiter  Waiter
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -28,7 +27,6 @@ type Updater struct {
 
 func NewUpdater(
 	instanceDesc string,
-	preparer Preparer,
 	drainer Drainer,
 	stopper Stopper,
 	applier bpapplier.Applier,
@@ -40,46 +38,23 @@ func NewUpdater(
 	return Updater{
 		instanceDesc: instanceDesc,
 
-		preparer: preparer,
-		drainer:  drainer,
-		stopper:  stopper,
-		applier:  applier,
-		starter:  starter,
-		waiter:   waiter,
+		drainer: drainer,
+		stopper: stopper,
+		applier: applier,
+		starter: starter,
+		waiter:  waiter,
 
 		eventLog: eventLog,
 		logger:   logger,
 	}
 }
 
-func (u Updater) Update() error {
-	stage := u.eventLog.BeginStage(
-		fmt.Sprintf("Updating instance %s", u.instanceDesc), 6)
+func (u Updater) SetUp() error {
+	stage := u.eventLog.BeginStage(fmt.Sprintf("Setting up instance %s", u.instanceDesc), 3)
 
-	task := stage.BeginTask("Preparing")
+	task := stage.BeginTask("Applying")
 
-	err := task.End(u.preparer.Prepare())
-	if err != nil {
-		return bosherr.WrapError(err, "Preparing")
-	}
-
-	task = stage.BeginTask("Draining")
-
-	err = task.End(u.drainer.Drain())
-	if err != nil {
-		return bosherr.WrapError(err, "Draining")
-	}
-
-	task = stage.BeginTask("Stopping")
-
-	err = task.End(u.stopper.Stop())
-	if err != nil {
-		return bosherr.WrapError(err, "Stopping")
-	}
-
-	task = stage.BeginTask("Applying")
-
-	err = task.End(u.applier.Apply())
+	err := task.End(u.applier.Apply())
 	if err != nil {
 		return bosherr.WrapError(err, "Applying")
 	}
@@ -96,6 +71,26 @@ func (u Updater) Update() error {
 	err = task.End(u.waiter.Wait())
 	if err != nil {
 		return bosherr.WrapError(err, "Waiting")
+	}
+
+	return nil
+}
+
+func (u Updater) TearDown() error {
+	stage := u.eventLog.BeginStage(fmt.Sprintf("Tearing down instance %s", u.instanceDesc), 2)
+
+	task := stage.BeginTask("Draining")
+
+	err := task.End(u.drainer.Drain())
+	if err != nil {
+		return bosherr.WrapError(err, "Draining")
+	}
+
+	task = stage.BeginTask("Stopping")
+
+	err = task.End(u.stopper.Stop())
+	if err != nil {
+		return bosherr.WrapError(err, "Stopping")
 	}
 
 	return nil

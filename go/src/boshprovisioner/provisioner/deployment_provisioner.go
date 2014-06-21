@@ -6,6 +6,8 @@ import (
 
 	bpdep "boshprovisioner/deployment"
 	bpeventlog "boshprovisioner/eventlog"
+	bpinstance "boshprovisioner/instance"
+	bpvm "boshprovisioner/vm"
 )
 
 const deploymentProvisionerLogTag = "DeploymentProvisioner"
@@ -16,8 +18,9 @@ type DeploymentProvisioner struct {
 	manifestPath            string
 	deploymentReaderFactory bpdep.ReaderFactory
 
+	vmProvisioner       bpvm.VMProvisioner
 	releaseCompiler     ReleaseCompiler
-	instanceProvisioner InstanceProvisioner
+	instanceProvisioner bpinstance.InstanceProvisioner
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -26,8 +29,9 @@ type DeploymentProvisioner struct {
 func NewDeploymentProvisioner(
 	manifestPath string,
 	deploymentReaderFactory bpdep.ReaderFactory,
+	vmProvisioner bpvm.VMProvisioner,
 	releaseCompiler ReleaseCompiler,
-	instanceProvisioner InstanceProvisioner,
+	instanceProvisioner bpinstance.InstanceProvisioner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) DeploymentProvisioner {
@@ -35,6 +39,7 @@ func NewDeploymentProvisioner(
 		manifestPath:            manifestPath,
 		deploymentReaderFactory: deploymentReaderFactory,
 
+		vmProvisioner:       vmProvisioner,
 		releaseCompiler:     releaseCompiler,
 		instanceProvisioner: instanceProvisioner,
 
@@ -57,9 +62,28 @@ func (p DeploymentProvisioner) Provision() error {
 
 	task = stage.BeginTask("Validating instance")
 
-	job, instance, err := p.validateInstance(deployment)
+	job, depInstance, err := p.validateInstance(deployment)
 	if task.End(err) != nil {
 		return bosherr.WrapError(err, "Validating instance")
+	}
+
+	// todo VM was possibly provisioned last time
+	vm, err := p.vmProvisioner.Provision(depInstance)
+	if err != nil {
+		return bosherr.WrapError(err, "Provisioning VM")
+	}
+
+	instance := p.instanceProvisioner.PreviouslyProvisioned(vm.AgentClient(), job, depInstance)
+
+	err = instance.Deprovision()
+	if err != nil {
+		return bosherr.WrapError(err, "Deprovisioning instance")
+	}
+
+	// Deprovision VM before using release compiler since it will try to provision its own VM
+	err = vm.Deprovision()
+	if err != nil {
+		return bosherr.WrapError(err, "Deprovisioning VM")
 	}
 
 	err = p.releaseCompiler.Compile(deployment.CompilationInstance, deployment.Releases)
@@ -67,10 +91,17 @@ func (p DeploymentProvisioner) Provision() error {
 		return bosherr.WrapError(err, "Compiling releases")
 	}
 
-	err = p.instanceProvisioner.Provision(job, instance)
+	vm, err = p.vmProvisioner.Provision(depInstance)
 	if err != nil {
-		return bosherr.WrapError(err, "Provisioning instance")
+		return bosherr.WrapError(err, "Provisioning VM")
 	}
+
+	_, err = p.instanceProvisioner.Provision(vm.AgentClient(), job, depInstance)
+	if err != nil {
+		return bosherr.WrapError(err, "Starting instance")
+	}
+
+	// Do not Deprovision() VM to keep instance running
 
 	return nil
 }

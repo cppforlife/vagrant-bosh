@@ -12,6 +12,7 @@ import (
 	bpdep "boshprovisioner/deployment"
 	bpdload "boshprovisioner/downloader"
 	bpeventlog "boshprovisioner/eventlog"
+	bpinstance "boshprovisioner/instance"
 	bptplcomp "boshprovisioner/instance/templatescompiler"
 	bpinstupd "boshprovisioner/instance/updater"
 	bppkgscomp "boshprovisioner/packagescompiler"
@@ -19,7 +20,7 @@ import (
 	bprel "boshprovisioner/release"
 	bpreljob "boshprovisioner/release/job"
 	bptar "boshprovisioner/tar"
-	bpvm "boshprovisioner/vm"
+	bpvagrantvm "boshprovisioner/vm/vagrant"
 )
 
 const mainLogTag = "main"
@@ -126,7 +127,7 @@ func main() {
 
 	deploymentReaderFactory := bpdep.NewReaderFactory(fs, logger)
 
-	vmProvisionerFactory := bpvm.NewVMProvisionerFactory(
+	vagrantVMProvisionerFactory := bpvagrantvm.NewVMProvisionerFactory(
 		fs,
 		runner,
 		config.AssetsDir,
@@ -136,27 +137,27 @@ func main() {
 		logger,
 	)
 
-	vmProvisioner := vmProvisionerFactory.NewVMProvisioner()
+	vagrantVMProvisioner := vagrantVMProvisionerFactory.NewVMProvisioner()
 
 	releaseCompiler := bpprov.NewReleaseCompiler(
 		reposFactory.NewBlobstoreReleasesRepo(),
 		releaseReaderFactory,
 		packagesCompilerFactory,
 		templatesCompiler,
-		vmProvisioner,
+		vagrantVMProvisioner,
 		eventLog,
 		logger,
 	)
 
-	instanceProvisioner := bpprov.NewInstanceProvisioner(
+	instanceProvisioner := bpinstance.NewInstanceProvisioner(
 		updaterFactory,
-		vmProvisioner,
 		logger,
 	)
 
 	deploymentProvisioner := bpprov.NewDeploymentProvisioner(
 		config.ManifestPath,
 		deploymentReaderFactory,
+		vagrantVMProvisioner,
 		releaseCompiler,
 		instanceProvisioner,
 		eventLog,

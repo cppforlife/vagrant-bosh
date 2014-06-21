@@ -59,6 +59,8 @@ func (p ReleaseCompiler) Compile(instance bpdep.Instance, releases []bpdep.Relea
 		return bosherr.WrapError(err, "Provisioning agent")
 	}
 
+	defer vm.Deprovision()
+
 	err = p.uploadReleases(releases)
 	if err != nil {
 		return bosherr.WrapError(err, "Uploading releases")

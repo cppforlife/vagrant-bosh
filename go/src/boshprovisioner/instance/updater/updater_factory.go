@@ -42,8 +42,6 @@ func (f UpdaterFactory) NewUpdater(
 	depJob bpdep.Job,
 	instance bpdep.Instance,
 ) Updater {
-	preparer := NewPreparer(agentClient, f.logger)
-
 	drainer := NewDrainer(agentClient, f.logger)
 
 	stopper := NewStopper(agentClient, f.logger)
@@ -69,7 +67,6 @@ func (f UpdaterFactory) NewUpdater(
 
 	updater := NewUpdater(
 		fmt.Sprintf("%s/%d", instance.JobName, instance.Index),
-		preparer,
 		drainer,
 		stopper,
 		applier,

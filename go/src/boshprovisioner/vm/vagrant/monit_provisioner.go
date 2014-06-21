@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"time"
+
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 )
@@ -42,7 +44,7 @@ func (p MonitProvisioner) Provision() error {
 		return bosherr.WrapError(err, "Configuring monitrc")
 	}
 
-	err = p.runitProvisioner.Provision("monit")
+	err = p.runitProvisioner.Provision("monit", 1*time.Minute)
 	if err != nil {
 		return bosherr.WrapError(err, "Provisioning monit with runit")
 	}

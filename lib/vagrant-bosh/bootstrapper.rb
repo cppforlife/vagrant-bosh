@@ -31,7 +31,7 @@ module VagrantPlugins
         @c.chmod_x(provisioner_path)
 
         @c.sudo(
-          "#{provisioner_path} -configPath=#{@config_path}", 
+          "#{provisioner_path} -configPath=#{@config_path} 2> >(tee /tmp/provisioner.log >&2)",
           &@provisioner_tracker.method(:add_data)
         )
       end
@@ -43,12 +43,12 @@ module VagrantPlugins
           manifest_path: @manifest_path,
           assets_dir: @assets_path,
           repos_dir: @repos_path,
-          
+
           mbus: "https://user:password@127.0.0.1:4321/agent",
 
           blobstore: {
             provider: "local",
-            options: { 
+            options: {
               blobstore_path: File.join(@base_dir, "blobstore"),
             },
           },

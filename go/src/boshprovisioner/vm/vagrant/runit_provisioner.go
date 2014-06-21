@@ -11,7 +11,10 @@ import (
 	boshsys "bosh/system"
 )
 
-const runitProvisionerLogTag = "RunitProvisioner"
+const (
+	runitProvisionerLogTag = "RunitProvisioner"
+	runitStopStepDuration  = 1 * time.Second
+)
 
 var (
 	// Matches 'svlogd -tt /var/vcap/bosh/log'
@@ -47,13 +50,13 @@ func NewRunitProvisioner(
 	}
 }
 
-func (p RunitProvisioner) Provision(name string) error {
+func (p RunitProvisioner) Provision(name string, stopTimeout time.Duration) error {
 	err := p.installRunit()
 	if err != nil {
 		return bosherr.WrapError(err, "Installing runit")
 	}
 
-	err = p.setUpService(name)
+	err = p.setUpService(name, stopTimeout)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting up service")
 	}
@@ -83,13 +86,13 @@ func (p RunitProvisioner) installRunit() error {
 	return nil
 }
 
-func (p RunitProvisioner) setUpService(name string) error {
+func (p RunitProvisioner) setUpService(name string, stopTimeout time.Duration) error {
 	p.logger.Info(runitProvisionerLogTag, "Setting up %s service", name)
 
 	servicePath := fmt.Sprintf("/etc/sv/%s", name)
 	enableServicePath := fmt.Sprintf("/etc/service/%s", name)
 
-	err := p.stopRunAndLog(servicePath, enableServicePath, name)
+	err := p.stopRunAndLog(servicePath, enableServicePath, name, stopTimeout)
 	if err != nil {
 		return bosherr.WrapError(err, "Stopping run and log")
 	}
@@ -169,13 +172,13 @@ func (p RunitProvisioner) setUpLog(servicePath, name string) error {
 	return nil
 }
 
-func (p RunitProvisioner) stopRunAndLog(servicePath, enableServicePath, name string) error {
-	err := p.stopRunsv(name)
+func (p RunitProvisioner) stopRunAndLog(servicePath, enableServicePath, name string, stopTimeout time.Duration) error {
+	err := p.stopRunsv(name, stopTimeout)
 	if err != nil {
 		return bosherr.WrapError(err, "Stopping service")
 	}
 
-	err = p.stopRunsv(fmt.Sprintf("%s/log", name))
+	err = p.stopRunsv(fmt.Sprintf("%s/log", name), stopTimeout)
 	if err != nil {
 		return bosherr.WrapError(err, "Stopping log service")
 	}
@@ -196,7 +199,7 @@ func (p RunitProvisioner) startRunAndLog(servicePath, enableServicePath, name st
 	return err
 }
 
-func (p RunitProvisioner) stopRunsv(name string) error {
+func (p RunitProvisioner) stopRunsv(name string, stopTimeout time.Duration) error {
 	p.logger.Info(runitProvisionerLogTag, "Stopping runsv")
 
 	downStdout, _, _, err := p.runner.RunCommand("sv", "down", name)
@@ -210,15 +213,16 @@ func (p RunitProvisioner) stopRunsv(name string) error {
 	}
 
 	var lastStatusStdout string
+	var passedDuration time.Duration
 
-	for i := 0; i < 20; i++ {
+	for ; passedDuration < stopTimeout; passedDuration += runitStopStepDuration {
 		lastStatusStdout, _, _, _ = p.runner.RunCommand("sv", "status", name)
 
 		if runitStatusDownRegex.MatchString(lastStatusStdout) {
 			return nil
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(runitStopStepDuration)
 	}
 
 	return bosherr.New("Failed to stop runsv for %s. Output: %s", name, lastStatusStdout)

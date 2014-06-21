@@ -87,7 +87,7 @@ func (p AgentProvisioner) Provision(instance bpdep.Instance) (bpagclient.Client,
 
 	task = stage.BeginTask("Starting")
 
-	err = task.End(p.runitProvisioner.Provision("agent"))
+	err = task.End(p.runitProvisioner.Provision("agent", 10*time.Second))
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Provisioning agent with runit")
 	}

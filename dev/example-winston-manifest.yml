@@ -2,8 +2,8 @@ name: room101
 
 releases:
 - name: room101
-  version: 0.1-dev
-  url: file:///vagrant/room101-0.1-dev.tgz
+  version: 0+dev.1
+  url: file:///vagrant/room101-0+dev.1.tgz
 
 networks:
 - name: room101
@@ -42,12 +42,9 @@ jobs:
     winston:
       config:
         jobs:
-        - name: bosh_unit
-          privileged: true
-          build: ci/bosh_unit.yml
-          inputs:
-          - resource: ci
-          - resource: bosh-repo
+        - name: nothing
+          image: ubuntu
+          script: "echo works"
 
       prole:
         address: 127.0.0.1:4637

@@ -8,7 +8,7 @@ import (
 	boshsys "bosh/system"
 )
 
-const localFSDownloaderLogTag = "Downloader"
+const localFSDownloaderLogTag = "LocalFSDownloader"
 
 type LocalFSDownloader struct {
 	fs     boshsys.FileSystem

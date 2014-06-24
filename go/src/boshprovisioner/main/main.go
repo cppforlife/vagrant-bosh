@@ -72,7 +72,7 @@ func main() {
 
 	err = fs.MkdirAll(config.ReposDir, os.ModeDir)
 	if err != nil {
-		logger.Error(mainLogTag, "Failed to create repos dir %s", err.Error())
+		logger.Error(mainLogTag, "Failed to create repos dir: %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -86,7 +86,7 @@ func main() {
 
 	err = blobstoreProvisioner.Provision()
 	if err != nil {
-		logger.Error(mainLogTag, "Failed to provision blobstore %s", err.Error())
+		logger.Error(mainLogTag, "Failed to provision blobstore: %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -131,7 +131,6 @@ func main() {
 		fs,
 		runner,
 		config.AssetsDir,
-		config.Mbus,
 		config.Blobstore.AsMap(),
 		config.VMProvisioner,
 		eventLog,
@@ -155,9 +154,9 @@ func main() {
 		logger,
 	)
 
-	deploymentProvisioner := bpprov.NewDeploymentProvisioner(
-		config.ManifestPath,
+	singleVMProvisionerFactory := bpprov.NewSingleVMProvisionerFactory(
 		deploymentReaderFactory,
+		config.DeploymentProvisioner,
 		vagrantVMProvisioner,
 		releaseCompiler,
 		instanceProvisioner,
@@ -165,9 +164,11 @@ func main() {
 		logger,
 	)
 
+	deploymentProvisioner := singleVMProvisionerFactory.NewSingleVMProvisioner()
+
 	err = deploymentProvisioner.Provision()
 	if err != nil {
-		logger.Error(mainLogTag, "Failed to provision deployment %s", err.Error())
+		logger.Error(mainLogTag, "Failed to provision deployment: %s", err.Error())
 		os.Exit(1)
 	}
 }

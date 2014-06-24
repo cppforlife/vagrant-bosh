@@ -10,6 +10,8 @@ module VagrantPlugins
       # (not just minimum) dependencies usually found on a stemcell.
       attr_accessor :full_stemcell_compatibility
 
+      attr_accessor :agent_infrastructure, :agent_platform, :agent_configuration
+
       def finalize!
         self.full_stemcell_compatibility = !!self.full_stemcell_compatibility
       end

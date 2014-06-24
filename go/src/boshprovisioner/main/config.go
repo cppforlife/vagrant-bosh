@@ -10,9 +10,27 @@ import (
 	bpvm "boshprovisioner/vm"
 )
 
-type Config struct {
-	ManifestPath string `json:"manifest_path"`
+var DefaultWardenConfig = Config{
+	VMProvisioner: bpvm.VMProvisionerConfig{
+		AgentProvisioner: bpvm.AgentProvisionerConfig{
+			Infrastructure: "warden",
+			Platform:       "ubuntu",
+			Mbus:           "https://user:password@127.0.0.1:4321/agent",
+		},
+	},
+}
 
+var DefaultWardenAgentConfiguration = map[string]interface{}{
+	"Platform": map[string]interface{}{
+		"Linux": map[string]interface{}{
+			"UseDefaultTmpDir":              true,
+			"UsePreformattedPersistentDisk": true,
+			"BindMountPersistentDisk":       true,
+		},
+	},
+}
+
+type Config struct {
 	// Assets dir is used as a temporary location to transfer files from host to guest.
 	// It will not be created since assets already must be present.
 	AssetsDir string `json:"assets_dir"`
@@ -21,12 +39,11 @@ type Config struct {
 	// It will be created if it does not exist.
 	ReposDir string `json:"repos_dir"`
 
-	// e.g. "https://user:password@127.0.0.1:4321/agent"
-	Mbus string `json:"mbus"`
-
 	Blobstore bpprov.BlobstoreConfig `json:"blobstore"`
 
 	VMProvisioner bpvm.VMProvisionerConfig `json:"vm_provisioner"`
+
+	DeploymentProvisioner bpprov.DeploymentProvisionerConfig `json:"deployment_provisioner"`
 }
 
 func NewConfigFromPath(path string, fs boshsys.FileSystem) (Config, error) {
@@ -37,9 +54,15 @@ func NewConfigFromPath(path string, fs boshsys.FileSystem) (Config, error) {
 		return config, bosherr.WrapError(err, "Reading config %s", path)
 	}
 
+	config = DefaultWardenConfig
+
 	err = json.Unmarshal(bytes, &config)
 	if err != nil {
 		return config, bosherr.WrapError(err, "Unmarshalling config")
+	}
+
+	if config.VMProvisioner.AgentProvisioner.Configuration == nil {
+		config.VMProvisioner.AgentProvisioner.Configuration = DefaultWardenAgentConfiguration
 	}
 
 	err = config.validate()
@@ -51,20 +74,12 @@ func NewConfigFromPath(path string, fs boshsys.FileSystem) (Config, error) {
 }
 
 func (c Config) validate() error {
-	if c.ManifestPath == "" {
-		return bosherr.New("Must provide non-empty manifest_path")
-	}
-
 	if c.AssetsDir == "" {
 		return bosherr.New("Must provide non-empty assets_dir")
 	}
 
 	if c.ReposDir == "" {
 		return bosherr.New("Must provide non-empty repos_dir")
-	}
-
-	if c.Mbus == "" {
-		return bosherr.New("Must provide non-empty mbus")
 	}
 
 	if c.Blobstore.Type != bpprov.BlobstoreConfigTypeLocal {

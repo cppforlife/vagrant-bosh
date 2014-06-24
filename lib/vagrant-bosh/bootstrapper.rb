@@ -21,7 +21,9 @@ module VagrantPlugins
       def bootstrap
         @asset_uploader.sync(@assets_path)
 
-        @asset_uploader.upload_text(@config.manifest, @manifest_path)
+        if @config.manifest
+          @asset_uploader.upload_text(@config.manifest, @manifest_path)
+        end
 
         config_json = JSON.dump(config_hash)
         @asset_uploader.upload_text(config_json, @config_path)
@@ -40,11 +42,8 @@ module VagrantPlugins
 
       def config_hash
         {
-          manifest_path: @manifest_path,
           assets_dir: @assets_path,
           repos_dir: @repos_path,
-
-          mbus: "https://user:password@127.0.0.1:4321/agent",
 
           blobstore: {
             provider: "local",
@@ -55,6 +54,18 @@ module VagrantPlugins
 
           vm_provisioner: {
             full_stemcell_compatibility: @config.full_stemcell_compatibility,
+
+            agent_provisioner: {
+              infrastructure: @config.agent_infrastructure,
+              platform:       @config.agent_platform,
+              configuration:  @config.agent_configuration,
+
+              mbus: "https://user:password@127.0.0.1:4321/agent",
+            },
+          },
+
+          deployment_provisioner: {
+            manifest_path: (@manifest_path if @config.manifest),
           },
         }
       end

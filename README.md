@@ -49,6 +49,28 @@ end
 - It does not support stemcell specification because guest VM OS is picked via `config.vm.box` directive.
 
 
+### Supported provisioner options
+
+- `manifest` (String, default: `nil`) 
+  should contain full BOSH deployment manifest
+
+- `full_stemcell_compatibility` (Boolean, default: `false`) 
+  forces provisioner to install all (not just minimum) dependencies usually found on a stemcell
+
+- `agent_infrastructure` (String, default: `warden`)
+  configures BOSH Agent infrastructure (e.g. `aws`, `openstack`)
+
+- `agent_platform` (String, default: `ubuntu`)
+  configured BOSH Agent platform (e.g. `ubuntu`, `centos`)
+
+- `agent_configuration` (Hash, default: '{ ... }')
+
+
+### Using BOSH provisioner to build BOSH stemcells
+
+See [building AWS Stemcell](docs/build-aws-stemcell.md).
+
+
 ### Planned
 
 - Speed up apply step (Monit is sluggish)

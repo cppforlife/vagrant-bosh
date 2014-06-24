@@ -1,4 +1,4 @@
-package vm
+package vagrant
 
 import (
 	"encoding/json"
@@ -13,6 +13,7 @@ import (
 	bpagclient "boshprovisioner/agent/client"
 	bpdep "boshprovisioner/deployment"
 	bpeventlog "boshprovisioner/eventlog"
+	bpvm "boshprovisioner/vm"
 )
 
 const agentProvisionerLogTag = "AgentProvisioner"
@@ -27,8 +28,8 @@ type AgentProvisioner struct {
 	runitProvisioner RunitProvisioner
 	monitProvisioner MonitProvisioner
 
-	blobstoreConfig map[string]interface{}
-	agentURL        string
+	blobstoreConfig        map[string]interface{}
+	agentProvisionerConfig bpvm.AgentProvisionerConfig
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -41,7 +42,7 @@ func NewAgentProvisioner(
 	runitProvisioner RunitProvisioner,
 	monitProvisioner MonitProvisioner,
 	blobstoreConfig map[string]interface{},
-	agentURL string,
+	agentProvisionerConfig bpvm.AgentProvisionerConfig,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) AgentProvisioner {
@@ -53,43 +54,56 @@ func NewAgentProvisioner(
 		runitProvisioner: runitProvisioner,
 		monitProvisioner: monitProvisioner,
 
-		blobstoreConfig: blobstoreConfig,
-		agentURL:        agentURL,
+		blobstoreConfig:        blobstoreConfig,
+		agentProvisionerConfig: agentProvisionerConfig,
 
 		eventLog: eventLog,
 		logger:   logger,
 	}
 }
 
-func (p AgentProvisioner) Provision(instance bpdep.Instance) (bpagclient.Client, error) {
-	stage := p.eventLog.BeginStage("Updating BOSH agent", 5)
+func (p AgentProvisioner) Provision() error {
+	stage := p.eventLog.BeginStage("Updating BOSH agent", 4)
 
 	task := stage.BeginTask("Placing binaries")
 
 	err := task.End(p.placeBinaries())
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Placing agent binaries")
+		return bosherr.WrapError(err, "Placing agent binaries")
 	}
 
-	task = stage.BeginTask("Configuring settings")
+	task = stage.BeginTask("Placing configuration files")
 
-	err = task.End(p.configureSettings(instance))
+	err = task.End(p.placeConfFiles())
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Configuring settings")
+		return bosherr.WrapError(err, "Configuring settings")
 	}
 
-	task = stage.BeginTask("Configuring monit")
+	task = stage.BeginTask("Registering monit service")
 
 	err = task.End(p.monitProvisioner.Provision())
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Provisioning monit")
+		return bosherr.WrapError(err, "Provisioning monit")
 	}
 
-	task = stage.BeginTask("Starting")
+	task = stage.BeginTask("Registering agent service")
 
 	err = task.End(p.runitProvisioner.Provision("agent", 10*time.Second))
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Provisioning agent with runit")
+		return bosherr.WrapError(err, "Provisioning agent with runit")
+	}
+
+	return nil
+}
+
+func (p AgentProvisioner) Configure(instance bpdep.Instance) (bpagclient.Client, error) {
+	stage := p.eventLog.BeginStage("Configuring BOSH agent", 1)
+
+	task := stage.BeginTask("Configuring infrastructure settings")
+
+	err := task.End(p.placeInfSettings(instance))
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Placing infrastructure settings")
 	}
 
 	agentClient, err := p.buildAgentClient()
@@ -141,20 +155,53 @@ func (p AgentProvisioner) placeBinary(name, path string) error {
 	return nil
 }
 
-func (p AgentProvisioner) configureSettings(instance bpdep.Instance) error {
+func (p AgentProvisioner) placeConfFiles() error {
 	err := p.setUpDataDir()
 	if err != nil {
 		return bosherr.WrapError(err, "Setting up data dir")
 	}
 
-	err = p.placeConfFiles()
-	if err != nil {
-		return bosherr.WrapError(err, "Placing conf files")
+	fileNames := map[string]string{
+		"agent/agent.cert": "agent.cert", // Needed by agent HTTP handler
+		"agent/agent.key":  "agent.key",
 	}
 
-	err = p.placeInfSettings(instance)
+	for assetName, fileName := range fileNames {
+		err := p.assetManager.Place(assetName, filepath.Join("/var/vcap/bosh/", fileName))
+		if err != nil {
+			return bosherr.WrapError(err, "Placing %s", fileName)
+		}
+	}
+
+	err = p.placeAgentConf()
 	if err != nil {
-		return bosherr.WrapError(err, "Placing infrastructure settings")
+		return bosherr.WrapError(err, "Placing agent configuration")
+	}
+
+	return nil
+}
+
+func (p AgentProvisioner) placeAgentConf() error {
+	// etc/infrastructure and etc/plaform is loaded by BOSH Agent runit script
+	err := p.fs.WriteFileString("/var/vcap/bosh/etc/infrastructure", p.agentProvisionerConfig.Infrastructure)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing agent infrastructure")
+	}
+
+	err = p.fs.WriteFileString("/var/vcap/bosh/etc/platform", p.agentProvisionerConfig.Platform)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing agent platform")
+	}
+
+	// Go Agent will can unmarshal 'null' into an empty config
+	bytes, err := json.Marshal(p.agentProvisionerConfig.Configuration)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling agent configuration")
+	}
+
+	err = p.fs.WriteFile("/var/vcap/bosh/agent.json", bytes)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing agent configuration")
 	}
 
 	return nil
@@ -175,23 +222,6 @@ func (p AgentProvisioner) setUpDataDir() error {
 	err = p.cmds.Chmod("777", "/var/vcap/data")
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (p AgentProvisioner) placeConfFiles() error {
-	fileNames := map[string]string{
-		"agent/agent.cert": "agent.cert", // Needed by agent HTTP handler
-		"agent/agent.key":  "agent.key",
-		"agent/agent.json": "agent.json",
-	}
-
-	for assetName, fileName := range fileNames {
-		err := p.assetManager.Place(assetName, filepath.Join("/var/vcap/bosh/", fileName))
-		if err != nil {
-			return bosherr.WrapError(err, "Placing %s", fileName)
-		}
 	}
 
 	return nil
@@ -228,7 +258,7 @@ func (p AgentProvisioner) placeInfSettings(instance bpdep.Instance) error {
 		"disks":    h{"persistent": h{}},
 
 		"blobstore": p.blobstoreConfig,
-		"mbus":      p.agentURL, // todo port can conflict with jobs
+		"mbus":      p.agentProvisionerConfig.Mbus, // todo port can conflict with jobs
 
 		"env": h{},
 		"ntp": []string{},
@@ -248,7 +278,7 @@ func (p AgentProvisioner) placeInfSettings(instance bpdep.Instance) error {
 }
 
 func (p AgentProvisioner) buildAgentClient() (bpagclient.Client, error) {
-	agentClient, err := bpagclient.NewInsecureHTTPClientWithURI(p.agentURL, p.logger)
+	agentClient, err := bpagclient.NewInsecureHTTPClientWithURI(p.agentProvisionerConfig.Mbus, p.logger)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Building agent client")
 	}

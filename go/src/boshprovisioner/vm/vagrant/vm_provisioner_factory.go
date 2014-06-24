@@ -1,4 +1,4 @@
-package vm
+package vagrant
 
 import (
 	boshlog "bosh/logger"
@@ -26,7 +26,6 @@ func NewVMProvisionerFactory(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	assetsDir string,
-	mbus string,
 	blobstoreConfig map[string]interface{},
 	vmProvisionerConfig bpvm.VMProvisionerConfig,
 	eventLog bpeventlog.Log,
@@ -36,9 +35,7 @@ func NewVMProvisionerFactory(
 		fs:     fs,
 		runner: runner,
 
-		assetsDir: assetsDir,
-		mbus:      mbus,
-
+		assetsDir:           assetsDir,
 		blobstoreConfig:     blobstoreConfig,
 		vmProvisionerConfig: vmProvisionerConfig,
 
@@ -88,7 +85,7 @@ func (f VMProvisionerFactory) NewVMProvisioner() *VMProvisioner {
 		runitProvisioner,
 		monitProvisioner,
 		f.blobstoreConfig,
-		f.mbus,
+		f.vmProvisionerConfig.AgentProvisioner,
 		f.eventLog,
 		f.logger,
 	)

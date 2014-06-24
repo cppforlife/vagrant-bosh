@@ -1,6 +1,8 @@
-package vm
+package vagrant
 
 import (
+	"strings"
+
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshsys "bosh/system"
@@ -33,13 +35,20 @@ func NewVCAPUserProvisioner(
 }
 
 func (p VCAPUserProvisioner) Provision() error {
-	stage := p.eventLog.BeginStage("Setting up vcap user", 2)
+	stage := p.eventLog.BeginStage("Setting up vcap user", 3)
 
 	task := stage.BeginTask("Adding vcap user")
 
 	err := task.End(p.setUpVcapUser())
 	if err != nil {
 		return bosherr.WrapError(err, "Setting up vcap user")
+	}
+
+	task = stage.BeginTask("Configuring locales")
+
+	err = task.End(p.configureLocales())
+	if err != nil {
+		return bosherr.WrapError(err, "Configuring locales")
 	}
 
 	task = stage.BeginTask("Harden permissions")
@@ -72,17 +81,17 @@ func (p VCAPUserProvisioner) setUpVcapUser() error {
 	}
 
 	// todo setup vcap no-password sudo access
-	_, _, _, err = p.runner.RunCommand("usermod", "-a", "-G", "vcap", "vagrant")
+
+	_, stderr, _, err := p.runner.RunCommand("usermod", "-a", "-G", "vcap", "vagrant")
 	if err != nil {
-		return err
+		if !strings.Contains(stderr, "user 'vagrant' does not exist") {
+			return err
+		}
 	}
 
 	envBashs := []string{
 		"echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc",
 		"echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc",
-
-		// Configure vcap user locale (postgres initdb fails if mismatched)
-		"echo 'LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8' > /etc/default/locale",
 	}
 
 	for _, bash := range envBashs {
@@ -93,6 +102,21 @@ func (p VCAPUserProvisioner) setUpVcapUser() error {
 	}
 
 	return nil
+}
+
+func (p VCAPUserProvisioner) configureLocales() error {
+	_, _, _, err := p.runner.RunCommand("locale-gen", "en_US.UTF-8")
+	if err != nil {
+		return err
+	}
+
+	_, _, _, err = p.runner.RunCommand("dpkg-reconfigure", "locales")
+	if err != nil {
+		return err
+	}
+
+	// Configure vcap user locale (postgres initdb fails if mismatched)
+	return p.cmds.Bash("echo 'LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8' > /etc/default/locale")
 }
 
 func (p VCAPUserProvisioner) hardenPermissinons() error {

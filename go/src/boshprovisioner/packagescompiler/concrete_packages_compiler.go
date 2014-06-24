@@ -8,7 +8,7 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 
-	bragentclient "boshprovisioner/agent/client"
+	bpagentclient "boshprovisioner/agent/client"
 	bpeventlog "boshprovisioner/eventlog"
 	bpcpkgsrepo "boshprovisioner/packagescompiler/compiledpackagesrepo"
 	bppkgsrepo "boshprovisioner/packagescompiler/packagesrepo"
@@ -18,7 +18,7 @@ import (
 const concretePackagesCompilerLogTag = "ConcretePackagesCompiler"
 
 type ConcretePackagesCompiler struct {
-	agentClient          bragentclient.Client
+	agentClient          bpagentclient.Client
 	packagesRepo         bppkgsrepo.PackagesRepository
 	compiledPackagesRepo bpcpkgsrepo.CompiledPackagesRepository
 	blobstore            boshblob.Blobstore
@@ -28,7 +28,7 @@ type ConcretePackagesCompiler struct {
 }
 
 func NewConcretePackagesCompiler(
-	agentClient bragentclient.Client,
+	agentClient bpagentclient.Client,
 	packagesRepo bppkgsrepo.PackagesRepository,
 	compiledPackagesRepo bpcpkgsrepo.CompiledPackagesRepository,
 	blobstore boshblob.Blobstore,

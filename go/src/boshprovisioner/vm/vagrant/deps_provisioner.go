@@ -1,8 +1,9 @@
-package vm
+package vagrant
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
@@ -90,14 +91,22 @@ func (p DepsProvisioner) installPkg(name string) error {
 			return bosherr.WrapError(err, "Updating sources")
 		}
 
-		// Try second time after updating
-		_, _, _, err = p.runner.RunCommand("apt-get", "-y", "install", name)
-		if err != nil {
-			return bosherr.WrapError(err, "Installing %s after updating", name)
+		var lastInstallErr error
+
+		// For some reason libssl-dev was really hard to install on the first try
+		for i := 0; i < 3; i++ {
+			_, _, _, lastInstallErr = p.runner.RunCommand("apt-get", "-y", "install", name)
+			if lastInstallErr == nil {
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
 		}
+
+		return bosherr.WrapError(lastInstallErr, "Installing %s after updating", name)
 	}
 
-	return nil
+	return err
 }
 
 func (p DepsProvisioner) listInstalledPkgs() ([]string, error) {
@@ -131,7 +140,7 @@ func (p DepsProvisioner) isPkgInstalled(pkgName string, installedPkgs []string) 
 }
 
 var depsProvisionerPkgsForMinimumStemcellCompatibility = []string{
-	// For packaging scripts in BOSH releases
+	// Most BOSH releases require it for packaging
 	"build-essential", // 16sec
 	"cmake",           // 6sec
 
@@ -148,6 +157,16 @@ var depsProvisionerPkgsForMinimumStemcellCompatibility = []string{
 
 	// For warden
 	"quota", // 1sec
+
+	// Started needing that in saucy for building BOSH
+	"libssl-dev",
+
+	"bison",
+	"flex",
+
+	"gettext",
+	"libreadline6-dev",
+	"libncurses5-dev",
 }
 
 // Taken from base_apt stemcell builder stage
@@ -159,11 +178,6 @@ var depsProvisionerPkgsForFullStemcellCompatibility = []string{
 	"apparmor-utils",
 	"openssh-server",
 
-	"gettext",
-	"libreadline6-dev",
-	"libncurses5-dev",
-
-	"libssl-dev",
 	"libgcrypt-dev",
 	"ca-certificates",
 
@@ -176,9 +190,6 @@ var depsProvisionerPkgsForFullStemcellCompatibility = []string{
 	"libxml2-dev",
 	"libxslt1.1",
 	"libxslt1-dev",
-
-	"bison",
-	"flex",
 
 	// Utils
 	"bind9-host",

@@ -1,4 +1,4 @@
-package vm
+package vagrant
 
 import (
 	boshlog "bosh/logger"

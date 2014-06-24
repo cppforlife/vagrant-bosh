@@ -8,7 +8,7 @@ import (
 	bpvm "boshprovisioner/vm"
 )
 
-// Vagrant's VMProvisioner installs system dependencies that are usually
+// VMProvisioner installs system dependencies that are usually
 // found on a stemcell, adds vcap user and finally install Agent and Monit.
 type VMProvisioner struct {
 	vcapUserProvisioner VCAPUserProvisioner

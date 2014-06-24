@@ -4,7 +4,7 @@ import (
 	bpagclient "boshprovisioner/agent/client"
 )
 
-// Vagrant VM represents already provisioned Vagrant machine
+// VM represents already provisioned Vagrant machine
 // that can be communicated with via an AgentClient.
 type VM struct {
 	vmProvisioner *VMProvisioner

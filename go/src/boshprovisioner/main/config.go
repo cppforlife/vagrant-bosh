@@ -7,6 +7,7 @@ import (
 	boshsys "bosh/system"
 
 	bpprov "boshprovisioner/provisioner"
+	bpvm "boshprovisioner/vm"
 )
 
 type Config struct {
@@ -24,6 +25,8 @@ type Config struct {
 	Mbus string `json:"mbus"`
 
 	Blobstore bpprov.BlobstoreConfig `json:"blobstore"`
+
+	VMProvisioner bpvm.VMProvisionerConfig `json:"vm_provisioner"`
 }
 
 func NewConfigFromPath(path string, fs boshsys.FileSystem) (Config, error) {

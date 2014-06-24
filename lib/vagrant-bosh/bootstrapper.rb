@@ -4,11 +4,11 @@ require "json"
 module VagrantPlugins
   module VagrantBosh
     class Bootstrapper
-      def initialize(communicator, asset_uploader, base_dir, manifest, provisioner_tracker)
+      def initialize(communicator, asset_uploader, base_dir, config, provisioner_tracker)
         @c = communicator
         @asset_uploader = asset_uploader
         @base_dir = base_dir
-        @manifest = manifest
+        @config = config
         @provisioner_tracker = provisioner_tracker
         @logger = Log4r::Logger.new("vagrant::provisioners::bosh::bootstrapper")
 
@@ -21,7 +21,7 @@ module VagrantPlugins
       def bootstrap
         @asset_uploader.sync(@assets_path)
 
-        @asset_uploader.upload_text(@manifest, @manifest_path)
+        @asset_uploader.upload_text(@config.manifest, @manifest_path)
 
         config_json = JSON.dump(config_hash)
         @asset_uploader.upload_text(config_json, @config_path)
@@ -51,6 +51,10 @@ module VagrantPlugins
             options: {
               blobstore_path: File.join(@base_dir, "blobstore"),
             },
+          },
+
+          vm_provisioner: {
+            full_stemcell_compatibility: @config.full_stemcell_compatibility,
           },
         }
       end

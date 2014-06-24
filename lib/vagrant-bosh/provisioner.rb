@@ -27,7 +27,7 @@ module VagrantPlugins
           communicator,
           asset_uploader,
           "/opt/vagrant-bosh",
-          config.manifest,
+          config,
           provisioner_tracker,
         )
 

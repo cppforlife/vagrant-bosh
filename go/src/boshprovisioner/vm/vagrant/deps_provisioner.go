@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	depsProvisionerLogTag = "DepsProvisioner"
-	runAptGetUpdateMsg    = "E: Unable to fetch some archives, maybe run apt-get update"
+	depsProvisionerLogTag          = "DepsProvisioner"
+	depsProvisionerAptGetUpdateMsg = "E: Unable to fetch some archives, maybe run apt-get update"
 )
 
 // DepsProvisioner installs basic dependencies for running
@@ -21,17 +21,22 @@ const (
 // non-captured dependencies by few common BOSH releases.
 // (e.g. cmake, quota)
 type DepsProvisioner struct {
+	fullStemcellCompatibility bool
+
 	runner   boshsys.CmdRunner
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
 }
 
 func NewDepsProvisioner(
+	fullStemcellCompatibility bool,
 	runner boshsys.CmdRunner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) DepsProvisioner {
 	return DepsProvisioner{
+		fullStemcellCompatibility: fullStemcellCompatibility,
+
 		runner:   runner,
 		eventLog: eventLog,
 		logger:   logger,
@@ -39,19 +44,10 @@ func NewDepsProvisioner(
 }
 
 func (p DepsProvisioner) Provision() error {
-	pkgNames := []string{
-		// For packaging scripts in BOSH releases
-		"build-essential", // 16sec
-		"cmake",           // 6sec
-		"libcap-dev",      // 3sec
+	pkgNames := depsProvisionerPkgsForMinimumStemcellCompatibility
 
-		"libbz2-1.0",   // noop on precise64 Vagrant box
-		"libbz2-dev",   // 2sec
-		"libxslt1-dev", // 2sec
-		"libxml2-dev",  // 2sec
-
-		// For warden
-		"quota", // 1sec
+	if p.fullStemcellCompatibility {
+		pkgNames = append(pkgNames, depsProvisionerPkgsForFullStemcellCompatibility...)
 	}
 
 	stage := p.eventLog.BeginStage("Installing dependencies", len(pkgNames))
@@ -88,7 +84,7 @@ func (p DepsProvisioner) installPkg(name string) error {
 	}
 
 	// Avoid running 'apt-get update' since it usually takes 30sec
-	if strings.Contains(err.Error(), runAptGetUpdateMsg) {
+	if strings.Contains(err.Error(), depsProvisionerAptGetUpdateMsg) {
 		_, _, _, err := p.runner.RunCommand("apt-get", "-y", "update")
 		if err != nil {
 			return bosherr.WrapError(err, "Updating sources")
@@ -132,4 +128,73 @@ func (p DepsProvisioner) isPkgInstalled(pkgName string, installedPkgs []string) 
 	}
 
 	return false
+}
+
+var depsProvisionerPkgsForMinimumStemcellCompatibility = []string{
+	// For packaging scripts in BOSH releases
+	"build-essential", // 16sec
+	"cmake",           // 6sec
+
+	"libcap2-bin",
+	"libcap2-dev",
+
+	"libbz2-1.0",   // noop on precise64 Vagrant box
+	"libbz2-dev",   // 2sec
+	"libxslt1-dev", // 2sec
+	"libxml2-dev",  // 2sec
+
+	// Used by BOSH Agent
+	"iputils-arping",
+
+	// For warden
+	"quota", // 1sec
+}
+
+// Taken from base_apt stemcell builder stage
+var depsProvisionerPkgsForFullStemcellCompatibility = []string{
+	"libaio1",
+	"uuid-dev",
+	"nfs-common",
+	"zlib1g-dev",
+	"apparmor-utils",
+	"openssh-server",
+
+	"gettext",
+	"libreadline6-dev",
+	"libncurses5-dev",
+
+	"libssl-dev",
+	"libgcrypt-dev",
+	"ca-certificates",
+
+	// CURL
+	"libcurl3",
+	"libcurl3-dev",
+
+	// XML
+	"libxml2",
+	"libxml2-dev",
+	"libxslt1.1",
+	"libxslt1-dev",
+
+	"bison",
+	"flex",
+
+	// Utils
+	"bind9-host",
+	"dnsutils",
+	"zip",
+	"unzip",
+	"psmisc",
+	"lsof",
+	"strace",
+	"curl",
+	"wget",
+	"gdb",
+	"sysstat",
+	"rsync",
+
+	"iptables",
+	"tcpdump",
+	"traceroute",
 }

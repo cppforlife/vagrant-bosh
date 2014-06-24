@@ -133,6 +133,7 @@ func main() {
 		config.AssetsDir,
 		config.Mbus,
 		config.Blobstore.AsMap(),
+		config.VMProvisioner,
 		eventLog,
 		logger,
 	)

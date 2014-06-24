@@ -5,15 +5,18 @@ import (
 	boshsys "bosh/system"
 
 	bpeventlog "boshprovisioner/eventlog"
+	bpvm "boshprovisioner/vm"
 )
 
 type VMProvisionerFactory struct {
 	fs     boshsys.FileSystem
 	runner boshsys.CmdRunner
 
-	assetsDir       string
-	mbus            string
-	blobstoreConfig map[string]interface{}
+	assetsDir string
+	mbus      string
+
+	blobstoreConfig     map[string]interface{}
+	vmProvisionerConfig bpvm.VMProvisionerConfig
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -25,6 +28,7 @@ func NewVMProvisionerFactory(
 	assetsDir string,
 	mbus string,
 	blobstoreConfig map[string]interface{},
+	vmProvisionerConfig bpvm.VMProvisionerConfig,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) VMProvisionerFactory {
@@ -32,9 +36,11 @@ func NewVMProvisionerFactory(
 		fs:     fs,
 		runner: runner,
 
-		assetsDir:       assetsDir,
-		mbus:            mbus,
-		blobstoreConfig: blobstoreConfig,
+		assetsDir: assetsDir,
+		mbus:      mbus,
+
+		blobstoreConfig:     blobstoreConfig,
+		vmProvisionerConfig: vmProvisionerConfig,
 
 		eventLog: eventLog,
 		logger:   logger,
@@ -69,6 +75,7 @@ func (f VMProvisionerFactory) NewVMProvisioner() *VMProvisioner {
 	)
 
 	depsProvisioner := NewDepsProvisioner(
+		f.vmProvisionerConfig.FullStemcellCompatibility,
 		f.runner,
 		f.eventLog,
 		f.logger,

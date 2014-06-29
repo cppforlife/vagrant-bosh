@@ -17,7 +17,8 @@ const tarReaderLogTag = "TarReader"
 // TarReader reads .tgz release file and returns a Release.
 // See unpacked release directory layout at the end of the file.
 type TarReader struct {
-	path       string
+	url string
+
 	downloader bpdload.Downloader
 	extractor  bptar.Extractor
 	fs         boshsys.FileSystem
@@ -29,14 +30,15 @@ type TarReader struct {
 }
 
 func NewTarReader(
-	path string,
+	url string,
 	downloader bpdload.Downloader,
 	extractor bptar.Extractor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) *TarReader {
 	return &TarReader{
-		path:       path,
+		url: url,
+
 		downloader: downloader,
 		extractor:  extractor,
 		fs:         fs,
@@ -44,61 +46,61 @@ func NewTarReader(
 	}
 }
 
-func (tr *TarReader) Read() (Release, error) {
+func (r *TarReader) Read() (Release, error) {
 	var release Release
 
-	downloadPath, err := tr.downloader.Download(tr.path)
+	downloadPath, err := r.downloader.Download(r.url)
 	if err != nil {
 		return release, bosherr.WrapError(err, "Downloading release")
 	}
 
-	tr.downloadPath = downloadPath
+	r.downloadPath = downloadPath
 
-	extractPath, err := tr.extractor.Extract(tr.downloadPath)
+	extractPath, err := r.extractor.Extract(r.downloadPath)
 	if err != nil {
-		cleanUpErr := tr.downloader.CleanUp(tr.downloadPath)
+		cleanUpErr := r.downloader.CleanUp(r.downloadPath)
 		if cleanUpErr != nil {
-			tr.logger.Debug(tarReaderLogTag,
+			r.logger.Debug(tarReaderLogTag,
 				"Failed to clean up downloaded release %v", cleanUpErr)
 		}
 
 		return release, bosherr.WrapError(err, "Extracting release")
 	}
 
-	tr.extractPath = extractPath
+	r.extractPath = extractPath
 
-	manifestPath := filepath.Join(tr.extractPath, "release.MF")
+	manifestPath := filepath.Join(r.extractPath, "release.MF")
 
-	manifest, err := bprelman.NewManifestFromPath(manifestPath, tr.fs)
+	manifest, err := bprelman.NewManifestFromPath(manifestPath, r.fs)
 	if err != nil {
-		closeErr := tr.Close()
+		closeErr := r.Close()
 		if closeErr != nil {
-			tr.logger.Debug(tarReaderLogTag,
+			r.logger.Debug(tarReaderLogTag,
 				"Failed to close release %v", closeErr)
 		}
 
 		return release, bosherr.WrapError(err, "Building manifest")
 	}
 
-	tr.logger.Debug(tarReaderLogTag, "Done building manifest %#v", manifest)
+	r.logger.Debug(tarReaderLogTag, "Done building manifest %#v", manifest)
 
 	release.populateFromManifest(manifest)
 
-	tr.populateReleaseTarPaths(&release)
+	r.populateReleaseTarPaths(&release)
 
 	return release, nil
 }
 
-func (tr TarReader) Close() error {
-	dlErr := tr.downloader.CleanUp(tr.downloadPath)
+func (r TarReader) Close() error {
+	dlErr := r.downloader.CleanUp(r.downloadPath)
 	if dlErr != nil {
-		tr.logger.Debug(tarReaderLogTag,
+		r.logger.Debug(tarReaderLogTag,
 			"Failed to clean up downloaded release %v", dlErr)
 	}
 
-	exErr := tr.extractor.CleanUp(tr.extractPath)
+	exErr := r.extractor.CleanUp(r.extractPath)
 	if exErr != nil {
-		tr.logger.Debug(tarReaderLogTag,
+		r.logger.Debug(tarReaderLogTag,
 			"Failed to clean up extracted release %v", exErr)
 	}
 
@@ -110,15 +112,15 @@ func (tr TarReader) Close() error {
 }
 
 // populateReleaseTarPaths sets TarPath for each job/package in the release.
-func (tr TarReader) populateReleaseTarPaths(release *Release) {
+func (r TarReader) populateReleaseTarPaths(release *Release) {
 	for i, job := range release.Jobs {
 		fileName := job.Name + ".tgz"
-		release.Jobs[i].TarPath = filepath.Join(tr.extractPath, "jobs", fileName)
+		release.Jobs[i].TarPath = filepath.Join(r.extractPath, "jobs", fileName)
 	}
 
 	for _, pkg := range release.Packages {
 		fileName := pkg.Name + ".tgz"
-		pkg.TarPath = filepath.Join(tr.extractPath, "packages", fileName)
+		pkg.TarPath = filepath.Join(r.extractPath, "packages", fileName)
 	}
 }
 

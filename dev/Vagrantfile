@@ -7,8 +7,11 @@ end
 require "../lib/vagrant-bosh"
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "precise64"
-  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  config.vm.box = "saucy"
+  config.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box"
+
+  # config.vm.box = "precise64"
+  # config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
   # Example port forward for example-bosh-manifest.yml
   config.vm.network "forwarded_port", guest: 25555, host: 25555 # BOSH Director API

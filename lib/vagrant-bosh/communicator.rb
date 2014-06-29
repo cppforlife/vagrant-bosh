@@ -5,6 +5,7 @@ module VagrantPlugins
     class Communicator
       def initialize(machine, ui)
         @c = machine.communicate
+
         @ui = ui.for(:communicator)
         @logger = Log4r::Logger.new("vagrant::provisioners::bosh::communicator")
       end

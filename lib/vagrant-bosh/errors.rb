@@ -3,9 +3,7 @@ require "vagrant"
 module VagrantPlugins
   module VagrantBosh
     module Errors
-      class BoshReleaseError < Vagrant::Errors::VagrantError
-        error_namespace("bosh")
-      end
+      class BoshReleaseError < StandardError; end
     end
   end
 end

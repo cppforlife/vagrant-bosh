@@ -39,17 +39,18 @@ end
 ### Deployment manifest gotchas
 
 - It must specify release source(s) via `url` key in the `releases` section.
+  See [release URL confgurations](docs/release-url.md).
 
 - It must have exactly one deployment job; however, deployment job
   can be made up from multiple job templates that come from multiple releases.
 
-- It does not support `static` network type though `dynamic` network type is supported
+- It does not support `static` network type, though `dynamic` network type is supported
   (Network configuration should be done via standard Vagrant configuration DSL).
 
 - It does not support stemcell specification because guest VM OS is picked via `config.vm.box` directive.
 
 
-### Supported provisioner options
+### Provisioner options
 
 - `manifest` (String, default: `nil`) 
   should contain full BOSH deployment manifest

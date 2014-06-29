@@ -4,6 +4,9 @@ require "vagrant-bosh/communicator"
 require "vagrant-bosh/asset_uploader"
 require "vagrant-bosh/bootstrapper"
 require "vagrant-bosh/provisioner_tracker"
+require "vagrant-bosh/deployment/release_uploader"
+require "vagrant-bosh/deployment/uploadable_release_factory"
+require "vagrant-bosh/deployment/manifest_factory"
 
 module VagrantPlugins
   module VagrantBosh
@@ -17,18 +20,34 @@ module VagrantPlugins
 
         asset_uploader = AssetUploader.new(
           communicator,
-          machine_ui,
           File.absolute_path("../assets", __FILE__),
+          machine_ui,
         )
 
         provisioner_tracker = ProvisionerTracker.new(machine_ui)
 
+        release_uploader = Deployment::ReleaseUploader.new(
+          machine, 
+          machine_ui,
+        )
+
+        uploadable_release_factory = Deployment::UploadableReleaseFactory.new(
+          config.synced_releases_dir,
+          release_uploader,
+          machine_ui,
+        )
+
+        manifest_factory = Deployment::ManifestFactory.new(
+          uploadable_release_factory,
+          machine_ui,
+        )
+
         @bootstrapper = Bootstrapper.new(
-          communicator,
-          asset_uploader,
-          "/opt/vagrant-bosh",
-          config,
+          communicator, 
+          config, 
+          asset_uploader, 
           provisioner_tracker,
+          manifest_factory, 
         )
 
         logger = Log4r::Logger.new("vagrant::provisioners::bosh")

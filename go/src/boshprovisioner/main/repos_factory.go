@@ -13,7 +13,6 @@ import (
 	bptplsrepo "boshprovisioner/instance/templatescompiler/templatesrepo"
 	bpcpkgsrepo "boshprovisioner/packagescompiler/compiledpackagesrepo"
 	bppkgsrepo "boshprovisioner/packagescompiler/packagesrepo"
-	bprelrepo "boshprovisioner/releasesrepo"
 )
 
 type ReposFactory struct {
@@ -38,15 +37,6 @@ func NewReposFactory(
 		blobstore:  blobstore,
 		logger:     logger,
 	}
-}
-
-func (f ReposFactory) NewBlobstoreReleasesRepo() bprelrepo.BlobstoreReleasesRepository {
-	return bprelrepo.NewBlobstoreReleasesRepository(
-		f.downloader,
-		f.blobstore,
-		f.newIndex("releases"),
-		f.logger,
-	)
 }
 
 func (f ReposFactory) NewJobsRepo() bpjobsrepo.JobsRepository {

@@ -22,10 +22,10 @@ module VagrantPlugins
         @logger = Log4r::Logger.new("vagrant::provisioners::bosh::ui")
       end
 
-      def for(extra_i18n_prefix)
+      def for(*extra_i18n_prefix)
         self.class.new(@machine, { 
           show_debug:  @show_debug, 
-          i18n_prefix: [@i18n_prefix, extra_i18n_prefix].compact.join("."),
+          i18n_prefix: ([@i18n_prefix] + extra_i18n_prefix).compact.join("."),
           start_time:  @start_time,
         })
       end
@@ -34,11 +34,13 @@ module VagrantPlugins
         msg(key, hash)
       end
 
-      def msg(key, hash)
+      def msg_string(key, hash)
         path = @i18n_prefix ? "#{@i18n_prefix}.#{key}" : key
-        title = I18n.t("bosh.ui.#{path}", hash)
-        
-        @machine.ui.info(time_prefix(title))
+        I18n.t("bosh.ui.#{path}", hash)
+      end
+
+      def msg(key, hash)
+        @machine.ui.info(time_prefix(msg_string(key, hash)))
       end
 
       def timed_msg(key, hash, &blk)
@@ -52,7 +54,7 @@ module VagrantPlugins
           return
         end
 
-        # In non-debug mode show "Uploading /var/vcap/bosh/bin/bosh-agent (sudo)... 1.33s"
+        # In non-debug mode show e.g. "Uploading /var/vcap/bosh/bin/bosh-agent (sudo)... 1.33s"
         begin
           t1 = Time.now
           @machine.ui.info(time_prefix("#{title}..."), new_line: false)

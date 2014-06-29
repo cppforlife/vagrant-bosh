@@ -140,7 +140,6 @@ func main() {
 	vagrantVMProvisioner := vagrantVMProvisionerFactory.NewVMProvisioner()
 
 	releaseCompiler := bpprov.NewReleaseCompiler(
-		reposFactory.NewBlobstoreReleasesRepo(),
 		releaseReaderFactory,
 		packagesCompilerFactory,
 		templatesCompiler,

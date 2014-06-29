@@ -53,7 +53,7 @@ func (p DepsProvisioner) Provision() error {
 
 	stage := p.eventLog.BeginStage("Installing dependencies", len(pkgNames))
 
-	installedPkgs, err := p.listInstalledPkgs()
+	installedPkgNames, err := p.listInstalledPkgNames()
 	if err != nil {
 		return bosherr.WrapError(err, "Listing installed packages")
 	}
@@ -61,7 +61,7 @@ func (p DepsProvisioner) Provision() error {
 	for _, pkgName := range pkgNames {
 		task := stage.BeginTask(fmt.Sprintf("Package %s", pkgName))
 
-		if p.isPkgInstalled(pkgName, installedPkgs) {
+		if p.isPkgInstalled(pkgName, installedPkgNames) {
 			p.logger.Debug(depsProvisionerLogTag, "Package %s is already installed", pkgName)
 			task.End(nil)
 			continue
@@ -109,29 +109,32 @@ func (p DepsProvisioner) installPkg(name string) error {
 	return err
 }
 
-func (p DepsProvisioner) listInstalledPkgs() ([]string, error) {
-	var installedPkgs []string
+func (p DepsProvisioner) listInstalledPkgNames() ([]string, error) {
+	var installedPkgNames []string
 
 	installedPkgStdout, _, _, err := p.runner.RunCommand("dpkg", "--get-selections")
 	if err != nil {
-		return installedPkgs, bosherr.WrapError(err, "dkpg query")
+		return nil, bosherr.WrapError(err, "dkpg query")
 	}
 
+	// e.g. 'zlib1g:amd64 install'
+	//      'util-linux   install'
 	for _, line := range strings.Split(installedPkgStdout, "\n") {
 		pieces := strings.Fields(line)
 
 		// Last line is empty
 		if len(pieces) == 2 && pieces[1] == "install" {
-			installedPkgs = append(installedPkgs, pieces[0])
+			pkgName := strings.Split(pieces[0], ":")[0]
+			installedPkgNames = append(installedPkgNames, pkgName)
 		}
 	}
 
-	return installedPkgs, nil
+	return installedPkgNames, nil
 }
 
 func (p DepsProvisioner) isPkgInstalled(pkgName string, installedPkgs []string) bool {
 	for _, installedPkgName := range installedPkgs {
-		if pkgName == installedPkgName {
+		if installedPkgName == pkgName {
 			return true
 		}
 	}
@@ -145,7 +148,7 @@ var depsProvisionerPkgsForMinimumStemcellCompatibility = []string{
 	"cmake",           // 6sec
 
 	"libcap2-bin",
-	"libcap2-dev",
+	"libcap-dev",
 
 	"libbz2-1.0",   // noop on precise64 Vagrant box
 	"libbz2-dev",   // 2sec

@@ -5,16 +5,17 @@ require "securerandom"
 module VagrantPlugins
   module VagrantBosh
     class AssetUploader
-      def initialize(communicator, ui, assets_path)
+      def initialize(communicator, assets_dir, ui)
         @c = communicator
+        @assets_dir = assets_dir
+
         @ui = ui.for(:asset_uploader)
-        @assets_path = assets_path
         @logger = Log4r::Logger.new("vagrant::provisioners::bosh::asset_uploader")
       end
 
       def sync(dst_path)
         @ui.timed_msg(:upload, dst_path: dst_path) do
-          upload_path(@assets_path, dst_path)
+          upload_path(@assets_dir, dst_path)
         end
       end
 

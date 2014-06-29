@@ -9,6 +9,33 @@ en:
       asset_uploader:
         upload: "Uploading %{dst_path}"
 
+      deployment:
+        manifest:
+          parse_error: "Failed to parse deployment manifest: %{details}"
+
+          non_hash_class_error: |-
+            Deployment manifest must be parseable into a Hash (was %{actual_class})
+
+        uploadable_release:
+          create_release: "Creating new dev release for %{name}"
+
+          create_release_error: |-
+            === stdout
+            %{stdout}            
+            === stderr
+            %{stderr}
+            !!! Failed to create new dev release for %{name}
+
+          missing_release_version_error: |-
+            === stdout
+            %{stdout}
+            === stderr
+            %{stderr}
+            !!! Failed to find release version for %{name}
+
+        release_uploader:
+          upload: "Uploading BOSH release %{dst_path}"
+
       provisioner_tracker:
         event:         "%{state} %{stage} > %{task}"
         invalid_event: "%{content}"

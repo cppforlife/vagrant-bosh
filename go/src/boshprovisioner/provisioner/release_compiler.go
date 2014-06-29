@@ -1,8 +1,6 @@
 package provisioner
 
 import (
-	"fmt"
-
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 
@@ -11,14 +9,12 @@ import (
 	bptplcomp "boshprovisioner/instance/templatescompiler"
 	bppkgscomp "boshprovisioner/packagescompiler"
 	bprel "boshprovisioner/release"
-	bprelrepo "boshprovisioner/releasesrepo"
 	bpvm "boshprovisioner/vm"
 )
 
 const releaseCompilerLogTag = "ReleaseCompiler"
 
 type ReleaseCompiler struct {
-	releasesRepo         bprelrepo.ReleasesRepository
 	releaseReaderFactory bprel.ReaderFactory
 
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory
@@ -31,7 +27,6 @@ type ReleaseCompiler struct {
 }
 
 func NewReleaseCompiler(
-	releasesRepo bprelrepo.ReleasesRepository,
 	releaseReaderFactory bprel.ReaderFactory,
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory,
 	templatesCompiler bptplcomp.TemplatesCompiler,
@@ -40,7 +35,6 @@ func NewReleaseCompiler(
 	logger boshlog.Logger,
 ) ReleaseCompiler {
 	return ReleaseCompiler{
-		releasesRepo:         releasesRepo,
 		releaseReaderFactory: releaseReaderFactory,
 
 		packagesCompilerFactory: packagesCompilerFactory,
@@ -53,55 +47,17 @@ func NewReleaseCompiler(
 	}
 }
 
-func (p ReleaseCompiler) Compile(instance bpdep.Instance, releases []bpdep.Release) error {
+func (p ReleaseCompiler) Compile(instance bpdep.Instance, depReleases []bpdep.Release) error {
 	vm, err := p.vmProvisioner.Provision(instance)
 	if err != nil {
-		return bosherr.WrapError(err, "Provisioning agent")
+		return bosherr.WrapError(err, "Provisioning VM")
 	}
 
 	defer vm.Deprovision()
 
-	err = p.uploadReleases(releases)
-	if err != nil {
-		return bosherr.WrapError(err, "Uploading releases")
-	}
-
 	pkgsCompiler := p.packagesCompilerFactory.NewCompiler(vm.AgentClient())
 
-	err = p.compileReleases(pkgsCompiler, releases)
-	if err != nil {
-		return bosherr.WrapError(err, "Compiling releases")
-	}
-
-	return nil
-}
-
-func (p ReleaseCompiler) uploadReleases(releases []bpdep.Release) error {
-	stage := p.eventLog.BeginStage("Uploading releases", len(releases)+1)
-
-	for _, depRelease := range releases {
-		releaseDesc := fmt.Sprintf("%s/%s", depRelease.Name, depRelease.Version)
-
-		task := stage.BeginTask(fmt.Sprintf("Release %s", releaseDesc))
-
-		err := task.End(p.releasesRepo.Pull(depRelease))
-		if err != nil {
-			return bosherr.WrapError(err, "Pulling release %s", depRelease.Name)
-		}
-	}
-
-	task := stage.BeginTask("Deleting old releases")
-
-	err := task.End(p.releasesRepo.KeepOnly(releases))
-	if err != nil {
-		return bosherr.WrapError(err, "Keeping only releases")
-	}
-
-	return nil
-}
-
-func (p ReleaseCompiler) compileReleases(pkgsCompiler bppkgscomp.PackagesCompiler, releases []bpdep.Release) error {
-	for _, depRelease := range releases {
+	for _, depRelease := range depReleases {
 		err := p.compileRelease(pkgsCompiler, depRelease)
 		if err != nil {
 			return bosherr.WrapError(err, "Release %s", depRelease.Name)
@@ -111,15 +67,19 @@ func (p ReleaseCompiler) compileReleases(pkgsCompiler bppkgscomp.PackagesCompile
 	return nil
 }
 
-func (p ReleaseCompiler) compileRelease(pkgsCompiler bppkgscomp.PackagesCompiler, release bpdep.Release) error {
-	reader := p.releaseReaderFactory.NewTarReader(release.URL)
+func (p ReleaseCompiler) compileRelease(pkgsCompiler bppkgscomp.PackagesCompiler, depRelease bpdep.Release) error {
+	relReader := p.releaseReaderFactory.NewReader(
+		depRelease.Name,
+		depRelease.Version,
+		depRelease.URL,
+	)
 
-	relRelease, err := reader.Read()
+	relRelease, err := relReader.Read()
 	if err != nil {
 		return bosherr.WrapError(err, "Reading release")
 	}
 
-	defer reader.Close()
+	defer relReader.Close()
 
 	err = pkgsCompiler.Compile(relRelease)
 	if err != nil {

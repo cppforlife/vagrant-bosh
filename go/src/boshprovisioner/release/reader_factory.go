@@ -1,11 +1,17 @@
 package release
 
 import (
+	"strings"
+
 	boshlog "bosh/logger"
 	boshsys "bosh/system"
 
 	bpdload "boshprovisioner/downloader"
 	bptar "boshprovisioner/tar"
+)
+
+const (
+	readerFactoryDirPrefix = "dir://"
 )
 
 type ReaderFactory struct {
@@ -29,6 +35,11 @@ func NewReaderFactory(
 	}
 }
 
-func (rf ReaderFactory) NewTarReader(path string) *TarReader {
-	return NewTarReader(path, rf.downloader, rf.extractor, rf.fs, rf.logger)
+func (rf ReaderFactory) NewReader(name, version, url string) Reader {
+	if strings.HasPrefix(url, readerFactoryDirPrefix) {
+		path := url[len(readerFactoryDirPrefix):]
+		return NewDirReader(name, version, path, rf.fs, rf.logger)
+	}
+
+	return NewTarReader(url, rf.downloader, rf.extractor, rf.fs, rf.logger)
 }

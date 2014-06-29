@@ -4,51 +4,53 @@ require "json"
 module VagrantPlugins
   module VagrantBosh
     class Bootstrapper
-      def initialize(communicator, asset_uploader, base_dir, config, provisioner_tracker)
+      def initialize(communicator, config, asset_uploader, provisioner_tracker, manifest_factory)
         @c = communicator
-        @asset_uploader = asset_uploader
-        @base_dir = base_dir
         @config = config
+        @asset_uploader = asset_uploader
         @provisioner_tracker = provisioner_tracker
-        @logger = Log4r::Logger.new("vagrant::provisioners::bosh::bootstrapper")
+        @manifest_factory = manifest_factory
 
-        @assets_path = File.join(@base_dir, "assets")
-        @repos_path  = File.join(@base_dir, "repos")
-        @manifest_path = File.join(@base_dir, "manifest.yml")
-        @config_path   = File.join(@base_dir, "config.json")
+        @logger = Log4r::Logger.new("vagrant::provisioners::bosh::bootstrapper")
       end
 
       def bootstrap
-        @asset_uploader.sync(@assets_path)
+        @asset_uploader.sync(@config.assets_dir)
 
         if @config.manifest
-          @asset_uploader.upload_text(@config.manifest, @manifest_path)
+          manifest = @manifest_factory.new_manifest(@config.manifest)
+          manifest.resolve_releases
+          @asset_uploader.upload_text(manifest.as_string, @config.manifest_path)
         end
 
         config_json = JSON.dump(config_hash)
-        @asset_uploader.upload_text(config_json, @config_path)
+        @asset_uploader.upload_text(config_json, @config.config_path)
 
-        # Provisioner is already uploaded when assets are synced
-        provisioner_path = File.join(@assets_path, "provisioner")
-        @c.chmod_x(provisioner_path)
-
-        @c.sudo(
-          "#{provisioner_path} -configPath=#{@config_path} 2> >(tee /tmp/provisioner.log >&2)",
-          &@provisioner_tracker.method(:add_data)
-        )
+        run_provisioner
       end
 
       private
 
+      def run_provisioner
+        # Provisioner is already uploaded when assets are synced
+        provisioner_path = File.join(@config.assets_dir, "provisioner")
+        @c.chmod_x(provisioner_path)
+
+        @c.sudo(
+          "#{provisioner_path} -configPath=#{@config.config_path} 2> >(tee /tmp/provisioner.log >&2)",
+          &@provisioner_tracker.method(:add_data)
+        )
+      end
+
       def config_hash
         {
-          assets_dir: @assets_path,
-          repos_dir: @repos_path,
+          assets_dir: @config.assets_dir,
+          repos_dir: @config.repos_dir,
 
           blobstore: {
             provider: "local",
             options: {
-              blobstore_path: File.join(@base_dir, "blobstore"),
+              blobstore_path: @config.local_blobstore_dir,
             },
           },
 
@@ -65,7 +67,7 @@ module VagrantPlugins
           },
 
           deployment_provisioner: {
-            manifest_path: (@manifest_path if @config.manifest),
+            manifest_path: (@config.manifest_path if @config.manifest),
           },
         }
       end

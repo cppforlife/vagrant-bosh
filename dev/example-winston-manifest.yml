@@ -2,8 +2,8 @@ name: room101
 
 releases:
 - name: room101
-  version: 0+dev.1
-  url: file:///vagrant/room101-0+dev.1.tgz
+  version: latest
+  url: dir+bosh://../../room101
 
 networks:
 - name: room101

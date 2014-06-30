@@ -14,20 +14,20 @@ const vcapUserProvisionerLogTag = "VCAPUserProvisioner"
 
 // VCAPUserProvisioner adds and configures vcap user.
 type VCAPUserProvisioner struct {
-	cmds     SimpleCmds
+	fs       boshsys.FileSystem
 	runner   boshsys.CmdRunner
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
 }
 
 func NewVCAPUserProvisioner(
-	cmds SimpleCmds,
+	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) VCAPUserProvisioner {
 	return VCAPUserProvisioner{
-		cmds:     cmds,
+		fs:       fs,
 		runner:   runner,
 		eventLog: eventLog,
 		logger:   logger,
@@ -64,40 +64,61 @@ func (p VCAPUserProvisioner) Provision() error {
 func (p VCAPUserProvisioner) setUpVcapUser() error {
 	p.logger.Info(vcapUserProvisionerLogTag, "Setting up vcap user")
 
-	userBash := `
-    groupadd --system admin
-    useradd -m --comment 'BOSH System User' vcap
-
-    echo "vcap:c1oudc0w" | chpasswd
-    echo "root:c1oudc0w" | chpasswd
-
-    usermod -G admin,adm,audio,cdrom,dialout,floppy,video,dip,plugdev vcap
-    usermod -s /bin/bash vcap
-  `
-
-	err := p.cmds.Bash(userBash)
+	_, stderr, _, err := p.runner.RunCommand("groupadd", "--system", "admin")
 	if err != nil {
-		return err
+		if !strings.Contains(stderr, "group 'admin' already exists") {
+			return err
+		}
+	}
+
+	_, stderr, _, err = p.runner.RunCommand("useradd", "-m", "--comment", "BOSH System User", "vcap")
+	if err != nil {
+		if !strings.Contains(stderr, "user 'vcap' already exists") {
+			return err
+		}
+	}
+
+	cmds := [][]string{
+		{"bash", "-c", "echo 'vcap:c1oudc0w' | chpasswd"},
+		{"bash", "-c", "echo 'root:c1oudc0w' | chpasswd"},
+
+		{"usermod", "-G", "admin,adm,audio,cdrom,dialout,floppy,video,dip,plugdev", "vcap"},
+		{"usermod", "-s", "/bin/bash", "vcap"},
+	}
+
+	for _, cmd := range cmds {
+		_, _, _, err := p.runner.RunCommand(cmd[0], cmd[1:]...)
+		if err != nil {
+			return err
+		}
 	}
 
 	// todo setup vcap no-password sudo access
 
-	_, stderr, _, err := p.runner.RunCommand("usermod", "-a", "-G", "vcap", "vagrant")
+	_, stderr, _, err = p.runner.RunCommand("usermod", "-a", "-G", "vcap", "vagrant")
 	if err != nil {
 		if !strings.Contains(stderr, "user 'vagrant' does not exist") {
 			return err
 		}
 	}
 
-	envBashs := []string{
-		"echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc",
-		"echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc",
-	}
+	return p.setUpBoshBinPath()
+}
 
-	for _, bash := range envBashs {
-		err := p.cmds.Bash(bash)
+func (p VCAPUserProvisioner) setUpBoshBinPath() error {
+	boshBinExport := "export PATH=/var/vcap/bosh/bin:$PATH"
+
+	for _, bashrcPath := range []string{"/root/.bashrc", "/home/vcap/.bashrc"} {
+		contents, err := p.fs.ReadFileString(bashrcPath)
 		if err != nil {
 			return err
+		}
+
+		if !strings.Contains(contents, boshBinExport) {
+			err := p.fs.WriteFileString(bashrcPath, contents+"\n"+boshBinExport+"\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -116,28 +137,30 @@ func (p VCAPUserProvisioner) configureLocales() error {
 	}
 
 	// Configure vcap user locale (postgres initdb fails if mismatched)
-	return p.cmds.Bash("echo 'LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8' > /etc/default/locale")
+	return p.fs.WriteFileString("/etc/default/locale", "LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8")
 }
 
 func (p VCAPUserProvisioner) hardenPermissinons() error {
-	permsBash := `
-    echo 'vcap' > /etc/cron.allow
-    echo 'vcap' > /etc/at.allow
+	cmds := [][]string{
+		{"bash", "-c", "echo 'vcap' > /etc/cron.allow"},
+		{"bash", "-c", "echo 'vcap' > /etc/at.allow"},
 
-    chmod 0770 /var/lock
-    chown -h root:vcap /var/lock
-    chown -LR root:vcap /var/lock
+		{"chmod", "0770", "/var/lock"},
+		{"chown", "-h", "root:vcap", "/var/lock"},
+		{"chown", "-LR", "root:vcap", "/var/lock"},
 
-    chmod 0640 /etc/cron.allow
-    chown root:vcap /etc/cron.allow
+		{"chmod", "0640", "/etc/cron.allow"},
+		{"chown", "root:vcap", "/etc/cron.allow"},
 
-    chmod 0640 /etc/at.allow
-    chown root:vcap /etc/at.allow
-  `
+		{"chmod", "0640", "/etc/at.allow"},
+		{"chown", "root:vcap", "/etc/at.allow"},
+	}
 
-	err := p.cmds.Bash(permsBash)
-	if err != nil {
-		return err
+	for _, cmd := range cmds {
+		_, _, _, err := p.runner.RunCommand(cmd[0], cmd[1:]...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

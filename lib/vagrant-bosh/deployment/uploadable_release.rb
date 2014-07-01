@@ -37,9 +37,9 @@ module VagrantPlugins
           result = @ui.timed_msg(:create_release, name: @name) do
             # Without clearing out environment Vagrant ruby env will be inherited
             Vagrant::Util::Subprocess.execute(
-              "env",  "-i", "HOME=#{ENV["HOME"]}", "TERM=#{ENV["TERM"]}", 
-              "bash", "-l", "-c", 
-              "bosh create release --force", 
+              "env",  "-i", "HOME=#{ENV["HOME"]}", "TERM=#{ENV["TERM"]}",
+              "bash", "-l", "-c",
+              "bosh -n create release --force",
               {workdir: @host_dir},
             )
           end

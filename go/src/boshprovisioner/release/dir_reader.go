@@ -73,18 +73,37 @@ func (r DirReader) Close() error {
 
 // populateReleaseTarPaths sets TarPath for each job/package in the release.
 func (r DirReader) populateReleaseTarPaths(release *Release) {
+	devBuilds := filepath.Join(r.dir, ".dev_builds")
+	finalBuilds := filepath.Join(r.dir, ".final_builds")
+
 	for i, job := range release.Jobs {
 		fileName := job.Fingerprint + ".tgz"
 
-		release.Jobs[i].TarPath = filepath.Join(
-			r.dir, ".dev_builds", "jobs", job.Name, fileName)
+		devPath := filepath.Join(devBuilds, "jobs", job.Name, fileName)
+		finalPath := filepath.Join(finalBuilds, "jobs", job.Name, fileName)
+
+		release.Jobs[i].TarPath = r.pathThatExistsOrEmpty(devPath, finalPath)
 	}
 
 	for _, pkg := range release.Packages {
 		fileName := pkg.Fingerprint + ".tgz"
 
-		pkg.TarPath = filepath.Join(
-			r.dir, ".dev_builds", "packages", pkg.Name, fileName)
+		devPath := filepath.Join(devBuilds, "packages", pkg.Name, fileName)
+		finalPath := filepath.Join(finalBuilds, "packages", pkg.Name, fileName)
+
+		pkg.TarPath = r.pathThatExistsOrEmpty(devPath, finalPath)
+	}
+}
+
+// pathThatExists returns first path that exists on the file system.
+func (r DirReader) pathThatExistsOrEmpty(firstPath, secondPath string) string {
+	switch {
+	case r.fs.FileExists(firstPath):
+		return firstPath
+	case r.fs.FileExists(secondPath):
+		return secondPath
+	default:
+		return ""
 	}
 }
 

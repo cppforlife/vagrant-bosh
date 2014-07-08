@@ -99,15 +99,15 @@ func (p AgentProvisioner) Provision() error {
 func (p AgentProvisioner) Configure(instance bpdep.Instance) (bpagclient.Client, error) {
 	stage := p.eventLog.BeginStage("Configuring BOSH agent", 1)
 
-	task := stage.BeginTask("Configuring infrastructure settings")
-
-	err := task.End(p.placeInfSettings(instance))
+	err := p.placeInfSettings(instance)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Placing infrastructure settings")
 	}
 
+	task := stage.BeginTask("Configuring infrastructure settings")
+
 	agentClient, err := p.buildAgentClient()
-	if err != nil {
+	if task.End(err) != nil {
 		return nil, bosherr.WrapError(err, "Building agent client")
 	}
 

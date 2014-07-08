@@ -16,21 +16,23 @@ module VagrantPlugins
         def sync(host_dir, guest_dir)
           # RsyncHelper uses @machine.ui internally
 
-          # .dev_builds/ contains jobs/ and packages/ tgzs
-          SyncedFolderRSync::RsyncHelper.rsync_single(@machine, @machine.ssh_info, {
-            type:      :rsync, 
-            hostpath:  File.join(host_dir, ".dev_builds"),
-            guestpath: File.join(guest_dir, ".dev_builds"),
-            disabled:  false,
-          })
+          dir_names = [
+            # .dev_builds/ and .final_builds/ contain jobs/ and packages/ tgzs
+            ".dev_builds",
+            ".final_builds",
 
-          # dev_releases/ contains dev release manifest files
-          SyncedFolderRSync::RsyncHelper.rsync_single(@machine, @machine.ssh_info, {
-            type:      :rsync, 
-            hostpath:  File.join(host_dir, "dev_releases"),
-            guestpath: File.join(guest_dir, "dev_releases"),
-            disabled:  false,
-          })
+            # dev_releases/ contains dev release manifest files
+            "dev_releases",            
+          ]
+
+          dir_names.each do |dir_name|
+            SyncedFolderRSync::RsyncHelper.rsync_single(@machine, @machine.ssh_info, {
+              type:      :rsync, 
+              hostpath:  File.join(host_dir, dir_name),
+              guestpath: File.join(guest_dir, dir_name),
+              disabled:  false,
+            })
+          end
         end
       end
 

@@ -10,11 +10,12 @@ module VagrantPlugins
       # UplodableRelease represents a release 
       # that *can be* synced to a guest FS location.
       class UplodableRelease
-        def initialize(name, version, host_dir, guest_root_dir, release_uploader, ui)
+        def initialize(name, version, host_dir, guest_root_dir, release_uploader, create_release_cmd, ui)
           @name = name
           @version = version
           @host_dir = host_dir
           @release_uploader = release_uploader
+          @create_release_cmd = create_release_cmd
 
           @ui = ui.for(:deployment, :uploadable_release)
           @logger = Log4r::Logger.new("vagrant::provisioners::bosh::deployment::uploadable_release")
@@ -35,11 +36,13 @@ module VagrantPlugins
 
         def create_release
           result = @ui.timed_msg(:create_release, name: @name) do
+            shell = ENV["SHELL"] || "bash"
+
             # Without clearing out environment Vagrant ruby env will be inherited
             Vagrant::Util::Subprocess.execute(
-              "env",  "-i", "HOME=#{ENV["HOME"]}", "TERM=#{ENV["TERM"]}",
-              "bash", "-l", "-c",
-              "bosh -n create release --force",
+              "env", "-i", "HOME=#{ENV["HOME"]}", "TERM=#{ENV["TERM"]}",
+              shell, "-l", "-c", 
+              @create_release_cmd,
               {workdir: @host_dir},
             )
           end

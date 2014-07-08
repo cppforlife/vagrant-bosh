@@ -34,6 +34,7 @@ module VagrantPlugins
         uploadable_release_factory = Deployment::UploadableReleaseFactory.new(
           config.synced_releases_dir,
           release_uploader,
+          config.create_release_cmd,
           machine_ui,
         )
 

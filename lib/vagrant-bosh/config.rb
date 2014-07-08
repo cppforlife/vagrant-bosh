@@ -20,6 +20,11 @@ module VagrantPlugins
 
       attr_accessor :agent_infrastructure, :agent_platform, :agent_configuration
 
+      # Command to run to create a BOSH release on the host.
+      # BOSH release has a rake task to create a dev release 
+      # because it creates locally versioned gems.
+      attr_accessor :create_release_cmd
+
       def initialize(*args)
         super
         @base_dir = "/opt/vagrant-bosh"
@@ -36,6 +41,8 @@ module VagrantPlugins
         @synced_releases_dir = File.join(@base_dir, "synced-releases")
 
         @full_stemcell_compatibility = !!@full_stemcell_compatibility
+
+        @create_release_cmd ||= "bosh -n create release --force"
       end
 
       def validate(machine)

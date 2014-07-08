@@ -66,6 +66,8 @@ end
 
 - `agent_configuration` (Hash, default: '{ ... }')
 
+- `create_release_cmd` (String, default: `bosh -n create release --force`)
+
 
 ### Using BOSH provisioner to build BOSH stemcells
 

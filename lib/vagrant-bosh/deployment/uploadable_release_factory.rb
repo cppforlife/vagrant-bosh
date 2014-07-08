@@ -4,9 +4,10 @@ module VagrantPlugins
   module VagrantBosh
     module Deployment
       class UploadableReleaseFactory
-        def initialize(guest_root_dir, release_uploader, ui)
+        def initialize(guest_root_dir, release_uploader, create_release_cmd, ui)
           @guest_root_dir = guest_root_dir
           @release_uploader = release_uploader
+          @create_release_cmd = create_release_cmd
           @ui = ui
         end
 
@@ -17,6 +18,7 @@ module VagrantPlugins
             host_dir, 
             @guest_root_dir, 
             @release_uploader, 
+            @create_release_cmd,
             @ui,
           )
         end

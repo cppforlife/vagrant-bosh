@@ -30,28 +30,38 @@ func NewConcreteTemplateToJobRepository(
 	}
 }
 
-func (r CTTJRepository) FindByTemplate(template bpdep.Template) (bprel.Job, bool, error) {
-	var job bprel.Job
+func (r CTTJRepository) FindByTemplate(template bpdep.Template) (ReleaseJobRecord, bool, error) {
+	var rec ReleaseJobRecord
 
-	err := r.index.Find(r.templateKey(template), &job)
+	err := r.index.Find(r.templateKey(template), &rec)
 	if err != nil {
 		if err == bpindex.ErrNotFound {
-			return job, false, nil
+			return rec, false, nil
 		}
 
-		return job, false, bosherr.WrapError(err, "Finding dep-template -> rel-job record")
+		return rec, false, bosherr.WrapError(err, "Finding dep-template -> release-job record")
 	}
 
-	return job, true, nil
+	return rec, true, nil
 }
 
-func (r CTTJRepository) SaveForJob(release bprel.Release, job bprel.Job) error {
-	err := r.index.Save(r.jobKey(release, job), job)
-	if err != nil {
-		return bosherr.WrapError(err, "Saving dep-template -> rel-job record")
+func (r CTTJRepository) SaveForJob(release bprel.Release, job bprel.Job) (ReleaseJobRecord, error) {
+	// todo redundant info stored in value
+	rec := ReleaseJobRecord{
+		ReleaseName:    release.Name,
+		ReleaseVersion: release.Version,
+
+		JobName:        job.Name,
+		JobVersion:     job.Version,
+		JobFingerprint: job.Fingerprint,
 	}
 
-	return nil
+	err := r.index.Save(r.jobKey(release, job), rec)
+	if err != nil {
+		return rec, bosherr.WrapError(err, "Saving dep-template -> release-job record")
+	}
+
+	return rec, nil
 }
 
 func (r CTTJRepository) templateKey(template bpdep.Template) templateToJobKey {

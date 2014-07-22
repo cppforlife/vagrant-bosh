@@ -1,9 +1,9 @@
 package manifest
 
 import (
-	"encoding/base64"
-
 	bosherr "bosh/errors"
+
+	bputil "boshprovisioner/util"
 )
 
 // SyntaxValidator parses and saves all manifest values to determine
@@ -60,34 +60,34 @@ func (v SyntaxValidator) validateJob(job *Job) error {
 		return bosherr.New("Missing version")
 	}
 
-	bytes, err := base64.StdEncoding.DecodeString(job.VersionRaw)
+	str, err := bputil.DecodePossibleBase64Str(job.VersionRaw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded version")
 	}
 
-	job.Version = string(bytes)
+	job.Version = str
 
 	if job.FingerprintRaw == "" {
 		return bosherr.New("Missing fingerprint")
 	}
 
-	bytes, err = base64.StdEncoding.DecodeString(job.FingerprintRaw)
+	str, err = bputil.DecodePossibleBase64Str(job.FingerprintRaw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded fingerprint")
 	}
 
-	job.Fingerprint = string(bytes)
+	job.Fingerprint = str
 
 	if job.SHA1Raw == "" {
 		return bosherr.New("Missing sha1")
 	}
 
-	bytes, err = base64.StdEncoding.DecodeString(job.SHA1Raw)
+	str, err = bputil.DecodePossibleBase64Str(job.SHA1Raw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded sha1")
 	}
 
-	job.SHA1 = string(bytes)
+	job.SHA1 = str
 
 	return nil
 }
@@ -101,34 +101,34 @@ func (v SyntaxValidator) validatePkg(pkg *Package) error {
 		return bosherr.New("Missing version")
 	}
 
-	bytes, err := base64.StdEncoding.DecodeString(pkg.VersionRaw)
+	str, err := bputil.DecodePossibleBase64Str(pkg.VersionRaw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded version")
 	}
 
-	pkg.Version = string(bytes)
+	pkg.Version = str
 
 	if pkg.FingerprintRaw == "" {
 		return bosherr.New("Missing fingerprint")
 	}
 
-	bytes, err = base64.StdEncoding.DecodeString(pkg.FingerprintRaw)
+	str, err = bputil.DecodePossibleBase64Str(pkg.FingerprintRaw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded fingerprint")
 	}
 
-	pkg.Fingerprint = string(bytes)
+	pkg.Fingerprint = str
 
 	if pkg.SHA1Raw == "" {
 		return bosherr.New("Missing sha1")
 	}
 
-	bytes, err = base64.StdEncoding.DecodeString(pkg.SHA1Raw)
+	str, err = bputil.DecodePossibleBase64Str(pkg.SHA1Raw)
 	if err != nil {
 		return bosherr.WrapError(err, "Decoding base64 encoded sha1")
 	}
 
-	pkg.SHA1 = string(bytes)
+	pkg.SHA1 = str
 
 	return nil
 }

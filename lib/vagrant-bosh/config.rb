@@ -42,7 +42,7 @@ module VagrantPlugins
 
         @full_stemcell_compatibility = !!@full_stemcell_compatibility
 
-        @create_release_cmd ||= "bosh -n create release --force"
+        @create_release_cmd ||= "ruby -v; bosh -n create release --force"
       end
 
       def validate(machine)

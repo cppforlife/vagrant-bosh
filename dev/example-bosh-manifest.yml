@@ -4,8 +4,11 @@ name: bosh-in-vagrant
 releases:
 # Download latest BOSH release from http://bosh-artifacts.cfapps.io/
 - name: bosh
-  version: 83
-  url: file:///vagrant/bosh-2597.tgz
+  version: 92
+  url: https://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-2652.tgz
+- name: bosh-warden-cpi
+  version: latest
+  url: dir+bosh://../../bosh-warden-cpi-release
 
 networks:
 # Must have dynamic network
@@ -34,15 +37,16 @@ jobs:
     release: bosh
   - name: blobstore
     release: bosh
-  - name: powerdns
-    release: bosh
   - name: postgres
     release: bosh
   - name: director
     release: bosh
   - name: health_monitor
     release: bosh
-  # todo colocate warden-cpi-release once we have it
+  - name: cpi
+    release: bosh-warden-cpi
+  - name: warden
+    release: bosh-warden-cpi
 
 properties:
   ntp: ["0.us.pool.ntp.org"]
@@ -160,29 +164,35 @@ properties:
     cloud_watch_enabled: false
     resurrector_enabled: true
 
-  dns:
-    address: 10.0.2.15
-    recursor: 8.8.8.8
-    db:
-      user: bosh
-      password: bosh-password
-      host: 10.0.2.15
-      port: 5432
-      database: bosh
+  external_cpi:
+    enabled: true
+    name: cpi
 
   # Control some remote vCenter
   vcenter:
-    address: 172.16.79.132
-    user: root
-    password: vmware
-    datacenters:
-      - name: TEST_DATACENTER
-        vm_folder:       SYSTEM_MICRO_VSPHERE_VMs
-        template_folder: SYSTEM_MICRO_VSPHERE_Templates
-        disk_path:       SYSTEM_MICRO_VSPHERE_Disks
-        datastore_pattern:            datastore
-        persistent_datastore_pattern: datastore
-        allow_mixed_datastores: true
-        clusters:
-          - TEST_CLUSTER:
-              resource_pool: TEST_RP
+    address: fake-address
+    user: fake-user
+    password: fake-password
+    datacenters: []
+
+  # cpi job template
+  cpi:
+    warden:
+      connect_network: tcp
+      connect_address: 127.0.0.1:7777
+    agent:
+      mbus: nats://nats:nats-password@10.0.2.15:4222
+      blobstore:
+        provider: dav
+        options:
+          endpoint: http://10.0.2.15:25251
+          user: agent
+          password: agent-password
+
+  # warden job template
+  warden:
+    listen_network: tcp
+    listen_address: 0.0.0.0:7777
+    network_pool: 10.244.0.0/22 # bosh-lite v1 used this pool
+    disk_quota_enabled: false
+    kernel_network_tuning_enabled: false

@@ -7,19 +7,20 @@ end
 require "../lib/vagrant-bosh"
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "saucy"
-  config.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box"
-
-  # config.vm.box = "precise64"
-  # config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  # Make sure box has large root partition
+  config.vm.box = "precise64"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
   # Example port forward for example-bosh-manifest.yml
   config.vm.network "forwarded_port", guest: 25555, host: 25555 # BOSH Director API
 
   # Example port forward for example-winston-manifest.yml
-  config.vm.network "forwarded_port", guest: 8080, host: 8080 # http
-  config.vm.network "forwarded_port", guest: 8081, host: 8081 # ws
-  config.vm.network "forwarded_port", guest: 5637, host: 5637 # redgreen
+  # config.vm.network "forwarded_port", guest: 8080, host: 8080 # http
+  # config.vm.network "forwarded_port", guest: 8081, host: 8081 # ws
+  # config.vm.network "forwarded_port", guest: 5637, host: 5637 # redgreen
+
+  # Example of custom private network configuration
+  # config.vm.network :private_network, ip: "192.168.56.4"
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 4096

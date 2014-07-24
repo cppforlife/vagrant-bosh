@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	readerFactoryDirPrefix = "dir://"
+	readerFactoryDirPrefix    = "dir://"
+	readerFactoryDirGitPrefix = "dir+git://"
 )
 
 type ReaderFactory struct {
@@ -36,9 +37,14 @@ func NewReaderFactory(
 }
 
 func (rf ReaderFactory) NewReader(name, version, url string) Reader {
+	if strings.HasPrefix(url, readerFactoryDirGitPrefix) {
+		dir := url[len(readerFactoryDirGitPrefix):]
+		return NewGitDirReader(dir, rf.fs, rf.logger)
+	}
+
 	if strings.HasPrefix(url, readerFactoryDirPrefix) {
-		path := url[len(readerFactoryDirPrefix):]
-		return NewDirReader(name, version, path, rf.fs, rf.logger)
+		dir := url[len(readerFactoryDirPrefix):]
+		return NewDirReader(name, version, dir, rf.fs, rf.logger)
 	}
 
 	return NewTarReader(url, rf.downloader, rf.extractor, rf.fs, rf.logger)

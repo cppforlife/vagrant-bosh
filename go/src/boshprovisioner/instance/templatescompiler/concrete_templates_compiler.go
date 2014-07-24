@@ -204,7 +204,7 @@ func (tc ConcreteTemplatesCompiler) compileJob(job bpdep.Job, instance bpdep.Ins
 
 type jobReader struct {
 	rec       bpjobsrepo.ReleaseJobRecord
-	tarReader *bpreljob.TarReader
+	tarReader bpreljob.Reader
 }
 
 func (tc ConcreteTemplatesCompiler) buildJobReaders(job bpdep.Job) ([]jobReader, error) {
@@ -229,7 +229,7 @@ func (tc ConcreteTemplatesCompiler) buildJobReaders(job bpdep.Job) ([]jobReader,
 
 		reader := jobReader{
 			rec:       rec,
-			tarReader: tc.jobReaderFactory.NewTarReader(jobURL),
+			tarReader: tc.jobReaderFactory.NewReader(jobURL),
 		}
 
 		readers = append(readers, reader)

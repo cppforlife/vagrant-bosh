@@ -44,61 +44,61 @@ func NewTarReader(
 	}
 }
 
-func (tr *TarReader) Read() (Job, error) {
+func (r *TarReader) Read() (Job, error) {
 	var job Job
 
-	downloadPath, err := tr.downloader.Download(tr.path)
+	downloadPath, err := r.downloader.Download(r.path)
 	if err != nil {
 		return job, bosherr.WrapError(err, "Downloading job")
 	}
 
-	tr.downloadPath = downloadPath
+	r.downloadPath = downloadPath
 
-	extractPath, err := tr.extractor.Extract(tr.downloadPath)
+	extractPath, err := r.extractor.Extract(r.downloadPath)
 	if err != nil {
-		cleanUpErr := tr.downloader.CleanUp(tr.downloadPath)
+		cleanUpErr := r.downloader.CleanUp(r.downloadPath)
 		if cleanUpErr != nil {
-			tr.logger.Debug(tarReaderLogTag,
+			r.logger.Debug(tarReaderLogTag,
 				"Failed to clean up downloaded job %v", cleanUpErr)
 		}
 
 		return job, bosherr.WrapError(err, "Extracting job")
 	}
 
-	tr.extractPath = extractPath
+	r.extractPath = extractPath
 
-	manifestPath := filepath.Join(tr.extractPath, "job.MF")
+	manifestPath := filepath.Join(r.extractPath, "job.MF")
 
-	manifest, err := bpreljobman.NewManifestFromPath(manifestPath, tr.fs)
+	manifest, err := bpreljobman.NewManifestFromPath(manifestPath, r.fs)
 	if err != nil {
-		closeErr := tr.Close()
+		closeErr := r.Close()
 		if closeErr != nil {
-			tr.logger.Debug(tarReaderLogTag,
+			r.logger.Debug(tarReaderLogTag,
 				"Failed to close job %v", closeErr)
 		}
 
 		return job, bosherr.WrapError(err, "Building manifest")
 	}
 
-	tr.logger.Debug(tarReaderLogTag, "Done building manifest %#v", manifest)
+	r.logger.Debug(tarReaderLogTag, "Done building manifest %#v", manifest)
 
 	job.populateFromManifest(manifest)
 
-	tr.populateJobPaths(&job)
+	r.populateJobPaths(&job)
 
 	return job, nil
 }
 
-func (tr TarReader) Close() error {
-	dlErr := tr.downloader.CleanUp(tr.downloadPath)
+func (r TarReader) Close() error {
+	dlErr := r.downloader.CleanUp(r.downloadPath)
 	if dlErr != nil {
-		tr.logger.Debug(tarReaderLogTag,
+		r.logger.Debug(tarReaderLogTag,
 			"Failed to clean up downloaded job %v", dlErr)
 	}
 
-	exErr := tr.extractor.CleanUp(tr.extractPath)
+	exErr := r.extractor.CleanUp(r.extractPath)
 	if exErr != nil {
-		tr.logger.Debug(tarReaderLogTag,
+		r.logger.Debug(tarReaderLogTag,
 			"Failed to clean up extracted job %v", exErr)
 	}
 
@@ -110,14 +110,14 @@ func (tr TarReader) Close() error {
 }
 
 // populateJobPaths sets Path for each template and monit in the job.
-func (tr TarReader) populateJobPaths(job *Job) {
+func (r TarReader) populateJobPaths(job *Job) {
 	// monit file is outside of templates/ directory
 	job.MonitTemplate.Path = filepath.Join(
-		tr.extractPath, job.MonitTemplate.SrcPathEnd)
+		r.extractPath, job.MonitTemplate.SrcPathEnd)
 
 	for i, template := range job.Templates {
 		job.Templates[i].Path = filepath.Join(
-			tr.extractPath, "templates", template.SrcPathEnd)
+			r.extractPath, "templates", template.SrcPathEnd)
 	}
 }
 
@@ -129,5 +129,5 @@ $ tree ~/Downloads/dummy-job
 ├── job.MF
 ├── monit
 └── templates
-    └── dummy_ctl
+    └── dummy_ctl.erb
 */

@@ -11,7 +11,7 @@ import (
 )
 
 var DefaultWardenConfig = Config{
-	VMProvisioner: bpvm.VMProvisionerConfig{
+	VMProvisioner: bpvm.ProvisionerConfig{
 		AgentProvisioner: bpvm.AgentProvisionerConfig{
 			Infrastructure: "warden",
 			Platform:       "ubuntu",
@@ -41,7 +41,7 @@ type Config struct {
 
 	Blobstore bpprov.BlobstoreConfig `json:"blobstore"`
 
-	VMProvisioner bpvm.VMProvisionerConfig `json:"vm_provisioner"`
+	VMProvisioner bpvm.ProvisionerConfig `json:"vm_provisioner"`
 
 	DeploymentProvisioner bpprov.DeploymentProvisionerConfig `json:"deployment_provisioner"`
 }

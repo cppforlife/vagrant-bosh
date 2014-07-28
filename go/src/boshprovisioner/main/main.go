@@ -111,7 +111,7 @@ func main() {
 		logger,
 	)
 
-	updaterFactory := bpinstupd.NewUpdaterFactory(
+	updaterFactory := bpinstupd.NewFactory(
 		templatesCompiler,
 		packagesCompilerFactory,
 		eventLog,
@@ -148,7 +148,7 @@ func main() {
 		logger,
 	)
 
-	instanceProvisioner := bpinstance.NewInstanceProvisioner(
+	instanceProvisioner := bpinstance.NewProvisioner(
 		updaterFactory,
 		logger,
 	)

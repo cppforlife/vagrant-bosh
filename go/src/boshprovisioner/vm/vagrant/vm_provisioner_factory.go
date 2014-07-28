@@ -16,7 +16,7 @@ type VMProvisionerFactory struct {
 	mbus      string
 
 	blobstoreConfig     map[string]interface{}
-	vmProvisionerConfig bpvm.VMProvisionerConfig
+	vmProvisionerConfig bpvm.ProvisionerConfig
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -27,7 +27,7 @@ func NewVMProvisionerFactory(
 	runner boshsys.CmdRunner,
 	assetsDir string,
 	blobstoreConfig map[string]interface{},
-	vmProvisionerConfig bpvm.VMProvisionerConfig,
+	vmProvisionerConfig bpvm.ProvisionerConfig,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) VMProvisionerFactory {

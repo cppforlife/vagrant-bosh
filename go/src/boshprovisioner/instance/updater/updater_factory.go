@@ -14,7 +14,7 @@ import (
 	bppkgscomp "boshprovisioner/packagescompiler"
 )
 
-type UpdaterFactory struct {
+type Factory struct {
 	templatesCompiler       bptplcomp.TemplatesCompiler
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory
 
@@ -22,13 +22,13 @@ type UpdaterFactory struct {
 	logger   boshlog.Logger
 }
 
-func NewUpdaterFactory(
+func NewFactory(
 	templatesCompiler bptplcomp.TemplatesCompiler,
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
-) UpdaterFactory {
-	return UpdaterFactory{
+) Factory {
+	return Factory{
 		templatesCompiler:       templatesCompiler,
 		packagesCompilerFactory: packagesCompilerFactory,
 
@@ -37,7 +37,7 @@ func NewUpdaterFactory(
 	}
 }
 
-func (f UpdaterFactory) NewUpdater(
+func (f Factory) NewUpdater(
 	agentClient bpagclient.Client,
 	depJob bpdep.Job,
 	instance bpdep.Instance,

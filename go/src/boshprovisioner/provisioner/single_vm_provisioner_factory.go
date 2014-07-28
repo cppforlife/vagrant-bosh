@@ -13,9 +13,9 @@ type SingleVMProvisionerFactory struct {
 	deploymentReaderFactory     bpdep.ReaderFactory
 	deploymentProvisionerConfig DeploymentProvisionerConfig
 
-	vmProvisioner       bpvm.VMProvisioner
+	vmProvisioner       bpvm.Provisioner
 	releaseCompiler     ReleaseCompiler
-	instanceProvisioner bpinstance.InstanceProvisioner
+	instanceProvisioner bpinstance.Provisioner
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -24,9 +24,9 @@ type SingleVMProvisionerFactory struct {
 func NewSingleVMProvisionerFactory(
 	deploymentReaderFactory bpdep.ReaderFactory,
 	deploymentProvisionerConfig DeploymentProvisionerConfig,
-	vmProvisioner bpvm.VMProvisioner,
+	vmProvisioner bpvm.Provisioner,
 	releaseCompiler ReleaseCompiler,
-	instanceProvisioner bpinstance.InstanceProvisioner,
+	instanceProvisioner bpinstance.Provisioner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) SingleVMProvisionerFactory {

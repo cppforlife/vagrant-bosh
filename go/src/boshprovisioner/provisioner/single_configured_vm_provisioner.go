@@ -16,9 +16,9 @@ type SingleConfiguredVMProvisioner struct {
 	manifestPath            string
 	deploymentReaderFactory bpdep.ReaderFactory
 
-	vmProvisioner       bpvm.VMProvisioner
+	vmProvisioner       bpvm.Provisioner
 	releaseCompiler     ReleaseCompiler
-	instanceProvisioner bpinstance.InstanceProvisioner
+	instanceProvisioner bpinstance.Provisioner
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -27,9 +27,9 @@ type SingleConfiguredVMProvisioner struct {
 func NewSingleConfiguredVMProvisioner(
 	manifestPath string,
 	deploymentReaderFactory bpdep.ReaderFactory,
-	vmProvisioner bpvm.VMProvisioner,
+	vmProvisioner bpvm.Provisioner,
 	releaseCompiler ReleaseCompiler,
-	instanceProvisioner bpinstance.InstanceProvisioner,
+	instanceProvisioner bpinstance.Provisioner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) SingleConfiguredVMProvisioner {

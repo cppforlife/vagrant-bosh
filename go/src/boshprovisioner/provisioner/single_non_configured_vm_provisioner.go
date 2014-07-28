@@ -10,13 +10,13 @@ import (
 
 // SingleNonConfiguredVMProvisioner configures 1 VM as a regular empty BOSH VM.
 type SingleNonConfiguredVMProvisioner struct {
-	vmProvisioner bpvm.VMProvisioner
+	vmProvisioner bpvm.Provisioner
 	eventLog      bpeventlog.Log
 	logger        boshlog.Logger
 }
 
 func NewSingleNonConfiguredVMProvisioner(
-	vmProvisioner bpvm.VMProvisioner,
+	vmProvisioner bpvm.Provisioner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) SingleNonConfiguredVMProvisioner {

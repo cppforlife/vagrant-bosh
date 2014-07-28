@@ -8,6 +8,8 @@ import (
 	bpinstupd "boshprovisioner/instance/updater"
 )
 
+const instanceLogTag = "Instance"
+
 type Instance struct {
 	updater bpinstupd.Updater
 
@@ -32,7 +34,7 @@ func NewInstance(
 }
 
 func (i Instance) Deprovision() error {
-	i.logger.Debug(instanceProvisionerLogTag, "Tearing down instance")
+	i.logger.Debug(instanceLogTag, "Tearing down instance")
 
 	err := i.updater.TearDown()
 	if err != nil {

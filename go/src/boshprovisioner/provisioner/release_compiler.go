@@ -20,7 +20,7 @@ type ReleaseCompiler struct {
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory
 	templatesCompiler       bptplcomp.TemplatesCompiler
 
-	vmProvisioner bpvm.VMProvisioner
+	vmProvisioner bpvm.Provisioner
 
 	eventLog bpeventlog.Log
 	logger   boshlog.Logger
@@ -30,7 +30,7 @@ func NewReleaseCompiler(
 	releaseReaderFactory bprel.ReaderFactory,
 	packagesCompilerFactory bppkgscomp.ConcretePackagesCompilerFactory,
 	templatesCompiler bptplcomp.TemplatesCompiler,
-	vmProvisioner bpvm.VMProvisioner,
+	vmProvisioner bpvm.Provisioner,
 	eventLog bpeventlog.Log,
 	logger boshlog.Logger,
 ) ReleaseCompiler {

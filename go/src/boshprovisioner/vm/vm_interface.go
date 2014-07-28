@@ -5,7 +5,7 @@ import (
 	bpdep "boshprovisioner/deployment"
 )
 
-type VMProvisioner interface {
+type Provisioner interface {
 	// Provision creates and configures VM for future agent communication.
 	// todo should not rely on bpdep.Instance
 	Provision(bpdep.Instance) (VM, error)
@@ -22,7 +22,7 @@ type VM interface {
 	Deprovision() error
 }
 
-type VMProvisionerConfig struct {
+type ProvisionerConfig struct {
 	// When provisioning, install all dependencies that official stemcells carry.
 	// By default, provisioners will only install absolutely needed dependencies.
 	FullStemcellCompatibility bool `json:"full_stemcell_compatibility"`

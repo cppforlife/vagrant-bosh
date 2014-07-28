@@ -9,25 +9,25 @@ import (
 	bpinstupd "boshprovisioner/instance/updater"
 )
 
-const instanceProvisionerLogTag = "InstanceProvisioner"
+const provisionerLogTag = "Provisioner"
 
-type InstanceProvisioner struct {
-	instanceUpdaterFactory bpinstupd.UpdaterFactory
+type Provisioner struct {
+	instanceUpdaterFactory bpinstupd.Factory
 	logger                 boshlog.Logger
 }
 
-func NewInstanceProvisioner(
-	instanceUpdaterFactory bpinstupd.UpdaterFactory,
+func NewProvisioner(
+	instanceUpdaterFactory bpinstupd.Factory,
 	logger boshlog.Logger,
-) InstanceProvisioner {
-	return InstanceProvisioner{
+) Provisioner {
+	return Provisioner{
 		instanceUpdaterFactory: instanceUpdaterFactory,
 		logger:                 logger,
 	}
 }
 
-func (p InstanceProvisioner) Provision(ac bpagclient.Client, job bpdep.Job, depInstance bpdep.Instance) (Instance, error) {
-	p.logger.Debug(instanceProvisionerLogTag, "Updating instance")
+func (p Provisioner) Provision(ac bpagclient.Client, job bpdep.Job, depInstance bpdep.Instance) (Instance, error) {
+	p.logger.Debug(provisionerLogTag, "Updating instance")
 
 	updater := p.instanceUpdaterFactory.NewUpdater(ac, job, depInstance)
 
@@ -39,8 +39,8 @@ func (p InstanceProvisioner) Provision(ac bpagclient.Client, job bpdep.Job, depI
 	return NewInstance(updater, job, depInstance, p.logger), nil
 }
 
-func (p InstanceProvisioner) PreviouslyProvisioned(ac bpagclient.Client, job bpdep.Job, depInstance bpdep.Instance) Instance {
-	p.logger.Debug(instanceProvisionerLogTag, "Finding previously provisioned instance")
+func (p Provisioner) PreviouslyProvisioned(ac bpagclient.Client, job bpdep.Job, depInstance bpdep.Instance) Instance {
+	p.logger.Debug(provisionerLogTag, "Finding previously provisioned instance")
 
 	updater := p.instanceUpdaterFactory.NewUpdater(ac, job, depInstance)
 

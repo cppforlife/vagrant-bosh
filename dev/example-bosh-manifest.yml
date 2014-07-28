@@ -2,13 +2,12 @@
 name: bosh-in-vagrant
 
 releases:
-# Download latest BOSH release from http://bosh-artifacts.cfapps.io/
 - name: bosh
   version: 92
   url: https://s3.amazonaws.com/bosh-jenkins-artifacts/release/bosh-2652.tgz
 - name: bosh-warden-cpi
-  version: latest
-  url: dir+bosh://../../bosh-warden-cpi-release
+  version: 2
+  url: https://s3.amazonaws.com/bosh-warden-cpi-blobs/bosh-warden-cpi-2.tgz
 
 networks:
 # Must have dynamic network
@@ -54,11 +53,11 @@ properties:
   nats:
     user: nats
     password: nats-password
-    address: 10.0.2.15
+    address: 127.0.0.1
     port: 4222
 
   blobstore:
-    address: 10.0.2.15
+    address: 127.0.0.1
     port: 25251
     backend_port: 25552
     agent:
@@ -71,18 +70,18 @@ properties:
   postgres:
     user: bosh
     password: bosh-password
-    host: 10.0.2.15
+    host: 127.0.0.1
     port: 5432
     database: bosh
 
   redis:
     password: redis-password
-    address: 10.0.2.15
+    address: 127.0.0.1
     port: 25255
 
   director:
     name: bosh-in-vagrant
-    address: 10.0.2.15
+    address: 127.0.0.1
     port: 25555
     encryption: false
     enable_snapshots: true
@@ -90,7 +89,7 @@ properties:
     db:
       user: bosh
       password: bosh-password
-      host: 10.0.2.15
+      host: 127.0.0.1
       port: 5432
       database: bosh
     ssl:
@@ -181,11 +180,11 @@ properties:
       connect_network: tcp
       connect_address: 127.0.0.1:7777
     agent:
-      mbus: nats://nats:nats-password@10.0.2.15:4222
+      mbus: nats://nats:nats-password@_local_ip_:4222
       blobstore:
         provider: dav
         options:
-          endpoint: http://10.0.2.15:25251
+          endpoint: http://_local_ip_:25251
           user: agent
           password: agent-password
 
@@ -196,3 +195,4 @@ properties:
     network_pool: 10.244.0.0/22 # bosh-lite v1 used this pool
     disk_quota_enabled: false
     kernel_network_tuning_enabled: false
+

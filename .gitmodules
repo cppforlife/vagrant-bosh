@@ -1,6 +1,3 @@
-[submodule "bosh"]
-	path = bosh
-	url = https://github.com/cloudfoundry/bosh.git
-[submodule "go/src/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = go/src/github.com/cloudfoundry-incubator/candiedyaml
-	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
+[submodule "bosh-provisioner"]
+	path = bosh-provisioner
+	url = https://github.com/cppforlife/bosh-provisioner

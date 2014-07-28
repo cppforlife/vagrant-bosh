@@ -20,7 +20,7 @@ module VagrantPlugins
 
         asset_uploader = AssetUploader.new(
           communicator,
-          File.absolute_path("../assets", __FILE__),
+          File.absolute_path("../../../bosh-provisioner/assets", __FILE__),
           machine_ui,
         )
 

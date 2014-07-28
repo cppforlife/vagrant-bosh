@@ -1,9 +1,0 @@
-{
-  "Platform": {
-    "Linux": {
-      "UseDefaultTmpDir": true,
-      "UsePreformattedPersistentDisk": true,
-      "BindMountPersistentDisk": true
-    }
-  }
-}

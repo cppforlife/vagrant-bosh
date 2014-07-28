@@ -33,11 +33,11 @@ module VagrantPlugins
 
       def run_provisioner
         # Provisioner is already uploaded when assets are synced
-        provisioner_path = File.join(@config.assets_dir, "provisioner")
+        provisioner_path = File.join(@config.assets_dir, "bosh-provisioner")
         @c.chmod_x(provisioner_path)
 
         @c.sudo(
-          "#{provisioner_path} -configPath=#{@config.config_path} 2> >(tee /tmp/provisioner.log >&2)",
+          "#{provisioner_path} -configPath=#{@config.config_path} 2>/tmp/provisioner.log",
           &@provisioner_tracker.method(:add_data)
         )
       end
@@ -52,6 +52,10 @@ module VagrantPlugins
             options: {
               blobstore_path: @config.local_blobstore_dir,
             },
+          },
+
+          event_log: {
+            device_type: "text",
           },
 
           vm_provisioner: {

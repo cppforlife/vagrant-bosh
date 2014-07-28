@@ -27,7 +27,7 @@ module VagrantPlugins
 
       def initialize(*args)
         super
-        @base_dir = "/opt/vagrant-bosh"
+        @base_dir = "/opt/bosh-provisioner"
       end
 
       def finalize!

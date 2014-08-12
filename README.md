@@ -78,19 +78,11 @@ See [building AWS Stemcell](docs/build-aws-stemcell.md).
 
 - Speed up apply step (Monit is sluggish)
 
-- Packer Provisioner API wrapper
-
-- Support non-Ubuntu vagrant boxes (currently provisioner uses `apt-get` to bootstrap deps)
-
-- Support non-tgz release source URLs
-
 
 ### Contributing
 
 ```
 git submodule update --recursive --init
-
-go/bin/test # or go/bin/build-linux-amd64
 
 # Spin up development Vagrant box with lib/ acting as BOSH provisioner
 ( cd dev/ && vagrant up )

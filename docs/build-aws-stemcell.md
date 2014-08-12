@@ -2,7 +2,7 @@
 
 !!! Stemcells produced using this method should NOT be used in production !!!
 
-To quickly ligth BOSH stemcells for AWS:
+To quickly create BOSH stemcells for AWS:
 
 1. Configure AWS Vagrant provider with your AWS account settings. For example:
 
@@ -47,7 +47,7 @@ config.vm.provision "bosh" do |c|
 end
 ```
 
-3. Remove `cloud-init` package included by default in Ubuntu AMIs 
+3. Remove `cloud-init` package included by default in Ubuntu AMIs
    to avoid conflicts with BOSH Agent auto configuration:
 
 ```
@@ -60,7 +60,7 @@ config.vm.provision "shell", inline: "echo 'LABEL=cloudimg-rootfs /  ext4 defaul
 5. Once VM is provisioned, in AWS Console right-click on the VM and select `Cerate image` to create an AMI.
    Optionally make AMI public by changing its permissions if stemcell will be used from a different AWS account.
 
-6. Unpack one of the officially published `ligth-bosh` stemcells and
+6. Unpack one of the officially published `light-bosh` stemcells and
    update `stemcell.MF` with new AMI reference, then repack.
 
 7. Upload your new light stemcell to a BOSH Director and use it in your deployment.

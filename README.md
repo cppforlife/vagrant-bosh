@@ -2,6 +2,8 @@
 
 BOSH provisioner allows to provision guest VM by specifying regular BOSH deployment manifest.
 
+You might also be interested in [packer-bosh](https://github.com/cppforlife/packer-bosh).
+
 
 ### Usage
 
@@ -69,7 +71,7 @@ end
 - `create_release_cmd` (String, default: `bosh -n create release --force`)
 
 
-### Using BOSH provisioner to build BOSH stemcells
+### Using provisioner to build BOSH stemcells
 
 See [building AWS Stemcell](docs/build-aws-stemcell.md).
 

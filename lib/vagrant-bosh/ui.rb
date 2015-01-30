@@ -50,8 +50,7 @@ module VagrantPlugins
         # Do not show elapsed time in debug mode
         if @show_debug
           @machine.ui.info(time_prefix(title))
-          blk.call
-          return
+          return blk.call
         end
 
         # In non-debug mode show e.g. "Uploading /var/vcap/bosh/bin/bosh-agent (sudo)... 1.33s"
